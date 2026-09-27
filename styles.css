@@ -115,21 +115,18 @@ body > .app-shell {
     animation: fadeUp .45s ease;
 }
 
-.onboarding-mark {
-    width: 50px;
-    height: 50px;
-    display: grid;
-    place-items: center;
-    margin: 0 auto 22px;
-    border: 1px solid rgba(var(--accent-rgb), .28);
-    border-radius: 13px;
-    background: rgba(var(--accent-rgb), .08);
-    box-shadow: 0 0 24px rgba(var(--accent-rgb), .12);
+.onboarding-brand {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 20px;
 }
 
-.onboarding-mark img {
-    width: 34px;
-    height: 34px;
+.onboarding-brand img {
+    display: block;
+    width: min(220px, 72%);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 10px rgba(var(--accent-rgb), .18));
 }
 
 .onboarding-card h1 {

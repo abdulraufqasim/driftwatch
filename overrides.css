@@ -62,54 +62,8 @@
     margin-top: 14px
 }
 
-.sample-repo-card {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 11px 12px;
-    margin: 0 0 14px;
-    text-align: left;
-    border: 1px solid rgba(var(--accent-rgb), .24);
-    border-radius: 8px;
-    background: linear-gradient(110deg, rgba(var(--accent-rgb), .06), #111622);
-}
-
-.sample-repo-icon {
-    width: 29px;
-    height: 29px;
-    display: grid;
-    place-items: center;
-    border-radius: 7px;
-    color: var(--accent-bright);
-    background: rgba(var(--accent-indigo-rgb), .12);
-    font-size: 17px;
-}
-
-.sample-repo-card strong,
-.sample-repo-card small,
 .team-credit {
     display: block;
-}
-
-.sample-repo-card strong {
-    margin-top: 3px;
-    font-size: 11px;
-}
-
-.sample-repo-card small {
-    margin-top: 3px;
-    color: var(--muted);
-    font: 9px var(--mono);
-}
-
-.sample-repo-status {
-    margin-left: auto;
-    padding: 4px 7px;
-    border: 1px solid #24634f;
-    border-radius: 4px;
-    color: #6be0b0;
-    background: #123329;
-    font: 9px var(--mono);
 }
 
 .team-credit {
@@ -387,22 +341,6 @@ button:active {
     background: rgba(255, 255, 255, .96);
     border-color: var(--line);
     color: var(--text);
-}
-
-[data-theme="light"] .sample-repo-card {
-    background: linear-gradient(110deg, rgba(var(--accent-rgb), .06), #f8faff);
-    border-color: rgba(var(--accent-rgb), .2);
-}
-
-[data-theme="light"] .sample-repo-icon {
-    color: var(--accent-bright);
-    background: rgba(var(--accent-indigo-rgb), .1);
-}
-
-[data-theme="light"] .sample-repo-status {
-    color: #087c58;
-    background: #e4f7ef;
-    border-color: #b8e6d2;
 }
 
 [data-theme="light"] .repo-input-wrap,
@@ -764,6 +702,121 @@ button:active {
     }
 }
 
+.onboarding-card {
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.onboarding-ambience {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    opacity: .24;
+}
+
+.ambience-track,
+.ambience-snake {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+}
+
+.ambience-track {
+    stroke: rgba(var(--accent-rgb), .12);
+    stroke-width: 1;
+}
+
+.ambience-snake {
+    stroke: var(--accent-bright);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-dasharray: 90 910;
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 3px rgba(var(--accent-rgb), .7));
+    animation: onboarding-snake-loop 12s linear infinite;
+}
+
+.ambience-point {
+    fill: var(--accent-bright);
+    opacity: .68;
+    filter: drop-shadow(0 0 3px rgba(var(--accent-rgb), .8));
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: onboarding-point-eat 12s linear infinite;
+}
+
+.point-top {
+    --point-respawn-x: 14px;
+    --point-respawn-y: 14px;
+    animation-delay: -9.95s;
+}
+
+.point-right {
+    --point-respawn-x: -14px;
+    --point-respawn-y: 12px;
+    animation-delay: -6.95s;
+}
+
+.point-bottom {
+    --point-respawn-x: 18px;
+    --point-respawn-y: -14px;
+    animation-delay: -3.95s;
+}
+
+.point-left {
+    --point-respawn-x: 14px;
+    --point-respawn-y: -12px;
+    animation-delay: -.95s;
+}
+
+.onboarding-card > :not(.onboarding-ambience) {
+    position: relative;
+    z-index: 1;
+}
+
+.onboarding-card > .onboarding-theme-toggle {
+    position: absolute;
+    z-index: 2;
+}
+
+@keyframes onboarding-snake-loop {
+    to {
+        stroke-dashoffset: -1000;
+    }
+}
+
+@keyframes onboarding-point-eat {
+    0%,
+    3% {
+        opacity: 0;
+        transform: scale(.55);
+    }
+
+    6%,
+    90% {
+        opacity: .68;
+        transform: translate(var(--point-respawn-x), var(--point-respawn-y)) scale(1);
+    }
+
+    93% {
+        opacity: 1;
+        transform: translate(var(--point-respawn-x), var(--point-respawn-y)) scale(1.4);
+    }
+
+    95% {
+        opacity: 0;
+        transform: translate(var(--point-respawn-x), var(--point-respawn-y)) scale(.35);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(.35);
+    }
+}
+
 .panel,
 .onboarding-card,
 .feature-item,
@@ -933,4 +986,196 @@ button:disabled {
     body::before {
         display: none;
     }
+}
+
+.github-connect-panel {
+    margin: 0 0 16px;
+    text-align: left;
+}
+
+.github-connect-button {
+    width: 100%;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 1px solid rgba(var(--accent-rgb), .3);
+    border-radius: 7px;
+    background: rgba(var(--accent-rgb), .08);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.github-connect-button svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+}
+
+.github-connect-button:hover {
+    border-color: rgba(var(--accent-rgb), .58);
+    background: rgba(var(--accent-rgb), .14);
+}
+
+.github-connected {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 38px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.github-connected strong {
+    color: var(--text);
+}
+
+.text-button {
+    padding: 4px;
+    background: transparent;
+    color: var(--accent-bright);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.github-message,
+.github-settings-message {
+    margin: 9px 0 0;
+    color: #9db8ff;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.github-message.is-error,
+.github-settings-message.is-error {
+    color: #ff9a9a;
+}
+
+.github-repo-picker {
+    margin-top: 12px;
+}
+
+.github-repo-picker label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.github-repo-picker input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    outline: none;
+    background: rgba(5, 8, 15, .7);
+    color: var(--text);
+    font: 10px var(--sans);
+}
+
+.github-repo-picker input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12);
+}
+
+.github-repo-list {
+    display: grid;
+    gap: 4px;
+    max-height: 152px;
+    margin-top: 6px;
+    overflow-y: auto;
+}
+
+.github-repo-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, .025);
+    color: var(--text);
+    text-align: left;
+}
+
+.github-repo-option strong {
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.github-repo-option span {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 8px;
+}
+
+.github-repo-option:hover,
+.github-repo-option[aria-selected="true"] {
+    border-color: rgba(var(--accent-rgb), .34);
+    background: rgba(var(--accent-rgb), .09);
+}
+
+.github-repo-empty {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.github-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 9px;
+    padding: 8px 10px;
+    border: 1px solid rgba(var(--accent-rgb), .22);
+    border-radius: 6px;
+    background: rgba(var(--accent-rgb), .06);
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.github-selection strong {
+    color: var(--text);
+    font-size: 10px;
+}
+
+.github-settings-row .outline-button {
+    flex: 0 0 auto;
+}
+
+.github-settings-message {
+    padding: 0 20px 12px;
+}
+
+[data-theme="light"] .github-repo-picker input {
+    background: #f8faff;
+}
+
+[data-theme="light"] .github-repo-option {
+    background: rgba(var(--accent-rgb), .035);
+}
+
+[data-theme="light"] .github-repo-option:hover,
+[data-theme="light"] .github-repo-option[aria-selected="true"] {
+    background: rgba(var(--accent-rgb), .09);
+}
+
+.github-connect-button[hidden],
+.github-connected[hidden],
+.github-repo-picker[hidden],
+.github-selection[hidden],
+.github-message[hidden],
+.github-settings-message[hidden],
+.github-repo-empty[hidden] {
+    display: none;
 }

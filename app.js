@@ -14,10 +14,24 @@ const appShell = document.getElementById('app-shell');
 const repoForm = document.getElementById('repo-form');
 const repoUrlInput = document.getElementById('repo-url');
 const sampleButton = document.getElementById('sample-button');
+const onboardingScanButton = document.getElementById('onboarding-scan');
+const githubConnectButton = document.getElementById('github-connect');
+const githubConnected = document.getElementById('github-connected');
+const githubLogin = document.getElementById('github-login');
+const githubSwitchButton = document.getElementById('github-switch');
+const githubMessage = document.getElementById('github-message');
+const githubRepoPicker = document.getElementById('github-repo-picker');
+const githubRepoSearch = document.getElementById('github-repo-search');
+const githubRepoList = document.getElementById('github-repo-list');
+const githubRepoEmpty = document.getElementById('github-repo-empty');
+const githubSelection = document.getElementById('github-selection');
+const githubDisconnectButton = document.getElementById('github-disconnect');
+const githubSettingsStatus = document.getElementById('github-settings-status');
+const githubSettingsMessage = document.getElementById('github-settings-message');
 const mapCanvas = document.querySelector('.architecture-canvas');
 const mapZoomLevel = document.getElementById('map-zoom-level');
 const themeToggles = [...document.querySelectorAll('[data-theme-toggle]')];
-const brandLogo = document.querySelector('.brand-logo');
+const brandLogos = [...document.querySelectorAll('.brand-logo, .onboarding-brand img')];
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
@@ -26,6 +40,8 @@ const panelMenuToggles = [...document.querySelectorAll('.more-button')];
 let scanTimer;
 let mapZoom = 100;
 let isSidebarOpen = !mobileSidebarQuery.matches;
+let githubRepositories = [];
+let selectedRepository = null;
 
 function setSidebarOpen(isOpen) {
   isSidebarOpen = isOpen;
@@ -59,12 +75,12 @@ function setTheme(theme) {
     button.setAttribute('title', `Switch to ${isLight ? 'dark' : 'light'} mode`);
     button.setAttribute('aria-pressed', String(isLight));
   });
-  if (brandLogo) {
-    brandLogo.src = isLight ? 'drift-logo.png' : 'drift-logo-dark.png';
-    brandLogo.srcset = isLight
+  brandLogos.forEach((logo) => {
+    logo.src = isLight ? 'drift-logo.png' : 'drift-logo-dark.png';
+    logo.srcset = isLight
       ? 'drift-logo.png 1x, drift-logo.png 2x'
       : 'drift-logo-dark.png 1x, drift-logo-dark@2x.png 2x';
-  }
+  });
 }
 
 setTheme(window.localStorage.getItem('driftwatch-theme') === 'light' ? 'light' : 'dark');
@@ -173,22 +189,196 @@ function startScan() {
 }
 
 scanButton.addEventListener('click', startScan);
-function beginFirstScan(event) {
-  if (event) event.preventDefault();
-  const repositoryUrl = repoUrlInput.value.trim();
-  if (repositoryUrl && !/^https?:\/\/.+/i.test(repositoryUrl)) {
-    repoUrlInput.setCustomValidity('Enter a valid Git repository URL.');
-    repoUrlInput.reportValidity();
-    return;
-  }
-  repoUrlInput.setCustomValidity('');
-  startScan();
+function setGithubMessage(message, isError = true) {
+  githubMessage.textContent = message;
+  githubMessage.hidden = !message;
+  githubMessage.classList.toggle('is-error', isError);
+  githubMessage.classList.toggle('is-success', Boolean(message) && !isError);
 }
 
-repoForm.addEventListener('submit', beginFirstScan);
+function setGithubSettingsMessage(message, isError = true) {
+  githubSettingsMessage.textContent = message;
+  githubSettingsMessage.hidden = !message;
+  githubSettingsMessage.classList.toggle('is-error', isError);
+}
+
+function setRepositorySelection(repository, source) {
+  selectedRepository = repository ? { ...repository, source } : null;
+  onboardingScanButton.disabled = !selectedRepository;
+  githubSelection.replaceChildren();
+  githubSelection.hidden = !selectedRepository;
+  if (!selectedRepository) return;
+
+  const name = document.createElement('strong');
+  name.textContent = selectedRepository.full_name;
+  const details = document.createElement('span');
+  const updatedAt = new Date(selectedRepository.updated_at);
+  const updatedText = Number.isNaN(updatedAt.getTime())
+    ? ''
+    : ` · Updated ${updatedAt.toLocaleDateString()}`;
+  details.textContent = `Public${updatedText}`;
+  githubSelection.append(name, details);
+  setGithubMessage(`${selectedRepository.full_name} selected. Repository scanning will be available in a later phase.`, false);
+}
+
+function updateGithubRepoList() {
+  const query = githubRepoSearch.value.trim().toLowerCase();
+  const visibleRepositories = githubRepositories.filter((repository) =>
+    repository.full_name.toLowerCase().includes(query));
+  githubRepoList.replaceChildren();
+  visibleRepositories.forEach((repository) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'github-repo-option';
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String(selectedRepository?.id === repository.id));
+    const name = document.createElement('strong');
+    name.textContent = repository.full_name;
+    const metadata = document.createElement('span');
+    const updatedAt = new Date(repository.updated_at);
+    metadata.textContent = `Public · Updated ${Number.isNaN(updatedAt.getTime()) ? 'date unavailable' : updatedAt.toLocaleDateString()}`;
+    option.append(name, metadata);
+    option.addEventListener('click', () => setRepositorySelection(repository, 'github'));
+    githubRepoList.append(option);
+  });
+  githubRepoEmpty.hidden = visibleRepositories.length !== 0;
+}
+
+function updateGithubConnection(login) {
+  const connected = Boolean(login);
+  githubConnectButton.hidden = connected;
+  githubConnected.hidden = !connected;
+  githubRepoPicker.hidden = !connected;
+  githubLogin.textContent = connected ? `@${login}` : '';
+  githubSettingsStatus.textContent = connected ? `Connected as @${login}` : 'Not connected';
+  githubDisconnectButton.disabled = !connected;
+  if (!connected && selectedRepository?.source === 'github') setRepositorySelection(null);
+}
+
+async function githubJson(url, options = {}) {
+  const response = await fetch(url, { credentials: 'same-origin', ...options });
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error('The Driftwatch server returned an invalid response.');
+  }
+  if (!response.ok) {
+    if (body.code === 'reconnect_required') updateGithubConnection(null);
+    throw new Error(body.error || 'The request could not be completed.');
+  }
+  return body;
+}
+
+async function loadGithubRepositories() {
+  setGithubMessage('Loading public repositories…', false);
+  githubRepoList.replaceChildren();
+  try {
+    const result = await githubJson('/api/github/repos');
+    githubRepositories = result.repositories;
+    updateGithubRepoList();
+    setGithubMessage(githubRepositories.length
+      ? ''
+      : 'No public repositories were found for this account. You can paste a public repository URL below.');
+  } catch (error) {
+    setGithubMessage(error.message);
+  }
+}
+
+async function refreshGithubConnection() {
+  try {
+    const status = await githubJson('/api/github/status');
+    updateGithubConnection(status.connected ? status.login : null);
+    if (status.error) setGithubMessage(status.error);
+    if (status.connected) await loadGithubRepositories();
+  } catch (error) {
+    setGithubMessage(`GitHub connection status is unavailable: ${error.message}`);
+  }
+}
+
+async function beginGithubConnection() {
+  githubConnectButton.disabled = true;
+  setGithubMessage('Preparing secure GitHub sign-in…', false);
+  try {
+    const result = await githubJson('/api/github/connect');
+    window.location.assign(result.url);
+  } catch (error) {
+    setGithubMessage(error.message);
+    githubConnectButton.disabled = false;
+  }
+}
+
+function parsePublicRepositoryUrl(value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('Enter a valid public GitHub repository URL.');
+  }
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'github.com'
+      || parts.length !== 2 || url.username || url.password || url.search || url.hash) {
+    throw new Error('Use a public repository URL in the form https://github.com/owner/repository.');
+  }
+  const repository = parts[1].replace(/\.git$/i, '');
+  if (!/^[A-Za-z0-9-]{1,100}$/.test(parts[0]) || !/^[A-Za-z0-9._-]{1,100}$/.test(repository)) {
+    throw new Error('Enter a valid github.com/owner/repository URL.');
+  }
+  return { owner: parts[0], repo: repository };
+}
+
+repoUrlInput.addEventListener('input', () => {
+  if (repoUrlInput.value.trim()) {
+    setRepositorySelection(null);
+    setGithubMessage('');
+  }
+});
+
+repoForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (selectedRepository) {
+    setGithubMessage(`${selectedRepository.full_name} selected. Repository scanning will be available in a later phase.`, false);
+    return;
+  }
+
+  try {
+    const { owner, repo } = parsePublicRepositoryUrl(repoUrlInput.value.trim());
+    onboardingScanButton.disabled = true;
+    setGithubMessage('Checking public repository…', false);
+    const result = await githubJson(`/api/github/public-repository?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`);
+    setRepositorySelection(result.repository, 'manual');
+  } catch (error) {
+    setGithubMessage(error.message);
+  } finally {
+    onboardingScanButton.disabled = !selectedRepository;
+  }
+});
+
+githubConnectButton.addEventListener('click', beginGithubConnection);
+githubSwitchButton.addEventListener('click', beginGithubConnection);
+githubRepoSearch.addEventListener('input', updateGithubRepoList);
+githubDisconnectButton.addEventListener('click', async () => {
+  githubDisconnectButton.disabled = true;
+  setGithubSettingsMessage('Disconnecting GitHub…', false);
+  try {
+    const result = await githubJson('/api/github/disconnect', { method: 'POST' });
+    updateGithubConnection(null);
+    githubRepositories = [];
+    githubRepoList.replaceChildren();
+    setGithubMessage('');
+    setGithubSettingsMessage(result.message || (result.revoked
+      ? 'GitHub disconnected and access revoked.'
+      : 'GitHub disconnected from Driftwatch.'), !result.revoked && Boolean(result.message));
+  } catch (error) {
+    setGithubSettingsMessage(error.message);
+    githubDisconnectButton.disabled = false;
+  }
+});
+refreshGithubConnection();
+
 sampleButton.addEventListener('click', () => {
   repoUrlInput.value = 'https://github.com/quantum-forge/my-app';
-  beginFirstScan();
+  startScan();
 });
 closeScan.addEventListener('click', () => {
   scanOverlay.classList.remove('visible');

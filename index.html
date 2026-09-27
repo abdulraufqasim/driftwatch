@@ -14,13 +14,21 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=8" />
-  <link rel="stylesheet" href="overrides.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=11" />
+  <link rel="stylesheet" href="overrides.css?v=11" />
 </head>
 
 <body>
   <div class="onboarding visible" id="onboarding">
     <div class="onboarding-card">
+      <svg class="onboarding-ambience" viewBox="0 0 470 650" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <rect class="ambience-track" x="12" y="12" width="446" height="626" rx="12" pathLength="1000" />
+        <rect class="ambience-snake" x="12" y="12" width="446" height="626" rx="12" pathLength="1000" />
+        <circle class="ambience-point point-top" cx="235" cy="12" r="2.5" />
+        <circle class="ambience-point point-right" cx="458" cy="325" r="2.5" />
+        <circle class="ambience-point point-bottom" cx="235" cy="638" r="2.5" />
+        <circle class="ambience-point point-left" cx="12" cy="325" r="2.5" />
+      </svg>
       <button class="theme-toggle onboarding-theme-toggle" type="button" data-theme-toggle
         aria-label="Switch to light mode" title="Switch to light mode" aria-pressed="false">
         <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,31 +39,43 @@
           <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"></path>
         </svg>
       </button>
-      <div class="onboarding-mark"><img src="drift-icon@2x.png" alt="" /></div>
+      <div class="onboarding-brand">
+        <img src="drift-logo-dark.png" srcset="drift-logo-dark.png 1x, drift-logo-dark@2x.png 2x" alt="Driftwatch" />
+      </div>
       <span class="kicker">Architecture guardian</span>
       <h1>Scan a repository<span class="heading-accent">.</span></h1>
       <p class="onboarding-copy">Connect a Git repository to reveal its architecture, dependencies, and drift signals.</p>
-      <div class="sample-repo-card">
-        <div class="sample-repo-icon">⌁</div>
-        <div>
-          <span class="panel-kicker">Sample repository</span>
-          <strong>my-app</strong>
-          <small>github.com/quantum-forge/my-app</small>
-        </div>
-        <span class="sample-repo-status">Ready</span>
-      </div>
       <p class="team-credit">Project made by <strong> Abdul Rauf & Hadiqa Ghanchi </strong></p>
+      <section class="github-connect-panel" aria-label="GitHub connection">
+        <button class="github-connect-button" id="github-connect" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.56.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.77 1.93 3.1 1.47.1-.72.39-1.21.7-1.49-2.48-.28-5.08-1.24-5.08-5.52 0-1.22.44-2.21 1.15-2.99-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.14a10.6 10.6 0 0 1 5.56 0c2.11-1.44 3.05-1.14 3.05-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.77 1.15 2.99 0 4.29-2.61 5.23-5.1 5.51.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
+          Connect with GitHub
+        </button>
+        <div class="github-connected" id="github-connected" hidden>
+          <span>Connected as <strong id="github-login"></strong></span>
+          <button class="text-button" id="github-switch" type="button">Switch account</button>
+        </div>
+        <p class="github-message" id="github-message" role="status" aria-live="polite" hidden></p>
+        <div class="github-repo-picker" id="github-repo-picker" hidden>
+          <label for="github-repo-search">Choose a public repository</label>
+          <input id="github-repo-search" type="search" placeholder="Search your repositories" autocomplete="off" />
+          <div class="github-repo-list" id="github-repo-list" role="listbox" aria-label="Public repositories"></div>
+          <p class="github-repo-empty" id="github-repo-empty" hidden>No matching public repositories.</p>
+        </div>
+        <div class="github-selection" id="github-selection" aria-live="polite" hidden></div>
+      </section>
       <form class="repo-form" id="repo-form">
-        <label for="repo-url">Git repository URL</label>
+        <label for="repo-url">Or paste a public repository URL</label>
         <div class="repo-input-wrap">
           <span aria-hidden="true">⌘</span>
-          <input id="repo-url" type="url" placeholder="https://github.com/you/project" autocomplete="url" />
+          <input id="repo-url" type="url"
+            placeholder="https://github.com/username/repo" autocomplete="url" />
         </div>
-        <button class="onboarding-scan-button" type="submit"><span class="scan-icon">↻</span> Scan repository</button>
+        <button class="onboarding-scan-button" id="onboarding-scan" type="submit" disabled><span class="scan-icon">↻</span> Scan repository</button>
       </form>
       <div class="onboarding-divider"><span>or</span></div>
-      <button class="sample-button" id="sample-button" type="button">Allow and scan sample project <span>my-app →</span></button>
-      <small class="onboarding-note">No repository connection is made in this prototype.</small>
+      <button class="sample-button" id="sample-button" type="button">Try demo project: <span>my-app →</span></button>
+      <small class="onboarding-note">GitHub is used only to list public repositories. Scanning is not available in this phase.</small>
     </div>
   </div>
 
@@ -439,6 +459,11 @@
           <label class="setting-row"><span><strong>Continuous monitoring</strong><small>Keep the guardian active between scans.</small></span><input class="toggle-input" type="checkbox" checked /></label>
           <label class="setting-row"><span><strong>Scan on repository open</strong><small>Start a fresh scan when the workspace opens.</small></span><input class="toggle-input" type="checkbox" checked /></label>
           <label class="setting-row"><span><strong>Show health notifications</strong><small>Receive updates when architecture health changes.</small></span><input class="toggle-input" type="checkbox" checked /></label>
+          <div class="setting-row github-settings-row">
+            <span><strong>GitHub account</strong><small id="github-settings-status">Not connected</small></span>
+            <button class="outline-button" id="github-disconnect" type="button" disabled>Disconnect</button>
+          </div>
+          <p class="github-settings-message" id="github-settings-message" role="status" aria-live="polite" hidden></p>
         </div>
         <button class="outline-button" id="reset-onboarding"><span>↺</span> Run first-time setup again</button>
       </section>
