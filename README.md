@@ -33,7 +33,7 @@ Disconnecting removes the local session and asks GitHub to revoke the OAuth gran
 
 Repository selection and connection are implemented; repository cloning, scanning, and architecture detection are not part of this phase.
 
-## Team
+## Team Quantum Forge
 - Abdul Rauf
 - Hadiqa Ghanchi
 
