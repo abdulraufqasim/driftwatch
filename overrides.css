@@ -596,3 +596,164 @@ button:active {
         font-size: 7px
     }
 }
+
+.topbar-context {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.sidebar-toggle {
+    flex: 0 0 30px;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.sidebar {
+    min-width: 0;
+    overflow: hidden;
+    transition: width .25s ease, flex-basis .25s ease, padding .25s ease, opacity .2s ease, border-color .25s ease, border-width .25s ease, visibility 0s linear .25s;
+}
+
+.app-shell:not(.sidebar-open) .sidebar {
+    width: 0;
+    flex-basis: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-right-width: 0;
+    border-right-color: transparent;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.app-shell.sidebar-open .sidebar {
+    border-right-width: 1px;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.sidebar-backdrop {
+    display: none;
+}
+
+@media(max-width:700px) {
+    .sidebar {
+        position: fixed;
+        z-index: 21;
+        inset: 0 auto 0 0;
+        width: min(280px, 85vw);
+        height: 100vh;
+        height: 100dvh;
+        flex: 0 0 min(280px, 85vw);
+        padding: 20px 14px;
+        border-right: 1px solid var(--line);
+        box-shadow: 12px 0 32px #0006;
+        opacity: 1;
+        transform: translateX(-100%);
+        transition: transform .25s ease, visibility 0s linear .25s;
+    }
+
+    .app-shell.sidebar-open .sidebar {
+        width: min(280px, 85vw);
+        flex-basis: min(280px, 85vw);
+        padding: 20px 14px;
+        border-right-width: 1px;
+        border-right-color: var(--line);
+        transform: translateX(0);
+        pointer-events: auto;
+        transition-delay: 0s;
+    }
+
+    .app-shell:not(.sidebar-open) .sidebar {
+        width: min(280px, 85vw);
+        flex-basis: min(280px, 85vw);
+        padding: 20px 14px;
+        border-right-width: 1px;
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-100%);
+        transition-delay: 0s, .25s;
+    }
+
+    .sidebar-backdrop:not([hidden]) {
+        display: block;
+        position: fixed;
+        z-index: 20;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: #05070db3;
+        opacity: 1;
+        animation: sidebar-backdrop-in .2s ease;
+    }
+
+    .brand {
+        padding: 0 4px 26px;
+        justify-content: flex-start;
+    }
+
+    .brand-logo {
+        display: block;
+    }
+
+    .brand-icon-collapsed {
+        display: none;
+    }
+
+    .brand-name,
+    .workspace-switcher>div:not(.workspace-avatar),
+    .workspace-switcher .chevron,
+    .nav-label,
+    .nav-item:not(.active),
+    .nav-item {
+        font-size: initial;
+    }
+
+    .workspace-switcher {
+        padding: 10px;
+        justify-content: flex-start;
+    }
+
+    .nav-item {
+        justify-content: flex-start;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .nav-label {
+        font-size: 9px;
+    }
+
+    .nav-count {
+        display: inline;
+    }
+
+    .guardian-card {
+        justify-content: flex-start;
+        padding: 11px;
+    }
+
+    .guardian-card>div:not(.guardian-orb),
+    .guardian-card .live-dot,
+    .profile-row>div:not(.profile-avatar),
+    .profile-row .more {
+        display: block;
+    }
+
+    .profile-row {
+        justify-content: flex-start;
+        padding: 0 8px;
+    }
+}
+
+@keyframes sidebar-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

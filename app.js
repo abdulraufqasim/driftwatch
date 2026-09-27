@@ -18,8 +18,36 @@ const mapCanvas = document.querySelector('.architecture-canvas');
 const mapZoomLevel = document.getElementById('map-zoom-level');
 const themeToggles = [...document.querySelectorAll('[data-theme-toggle]')];
 const brandLogo = document.querySelector('.brand-logo');
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
+const mobileSidebarQuery = window.matchMedia('(max-width: 700px)');
 let scanTimer;
 let mapZoom = 100;
+let isSidebarOpen = !mobileSidebarQuery.matches;
+
+function setSidebarOpen(isOpen) {
+  isSidebarOpen = isOpen;
+  appShell.classList.toggle('sidebar-open', isSidebarOpen);
+  sidebarToggle.setAttribute('aria-expanded', String(isSidebarOpen));
+  sidebarToggle.setAttribute('aria-label', `${isSidebarOpen ? 'Collapse' : 'Expand'} navigation`);
+  sidebarToggle.setAttribute('title', `${isSidebarOpen ? 'Collapse' : 'Expand'} navigation`);
+  if (!isSidebarOpen && sidebar.contains(document.activeElement)) sidebarToggle.focus();
+  sidebar.inert = !isSidebarOpen;
+  sidebar.setAttribute('aria-hidden', String(!isSidebarOpen));
+  sidebarBackdrop.hidden = !mobileSidebarQuery.matches || !isSidebarOpen;
+}
+
+setSidebarOpen(isSidebarOpen);
+sidebarToggle.addEventListener('click', () => setSidebarOpen(!isSidebarOpen));
+sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+mobileSidebarQuery.addEventListener('change', (event) => setSidebarOpen(!event.matches));
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && isSidebarOpen && mobileSidebarQuery.matches) {
+    setSidebarOpen(false);
+    sidebarToggle.focus();
+  }
+});
 
 function setTheme(theme) {
   const isLight = theme === 'light';
@@ -56,7 +84,10 @@ function showView(viewName) {
 }
 
 navItems.forEach((item) => {
-  item.addEventListener('click', () => showView(item.dataset.view));
+  item.addEventListener('click', () => {
+    showView(item.dataset.view);
+    if (mobileSidebarQuery.matches) setSidebarOpen(false);
+  });
 });
 
 function showToast(message) {
