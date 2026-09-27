@@ -14,8 +14,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=5" />
-  <link rel="stylesheet" href="overrides.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="overrides.css?v=7" />
 </head>
 
 <body>
@@ -72,7 +72,7 @@
       </div>
       <nav class="nav-menu" aria-label="Main navigation">
         <span class="nav-label">Observe</span>
-        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◈</span>Overview</button>
+        <button class="nav-item active" data-view="dashboard" aria-current="page"><span class="nav-icon">◈</span>Overview</button>
         <button class="nav-item" data-view="architecture"><span class="nav-icon">⌘</span>Architecture map</button>
         <button class="nav-item" data-view="timeline"><span class="nav-icon">◷</span>Drift timeline</button>
         <span class="nav-label nav-label-spaced">Manage</span>
@@ -113,7 +113,8 @@
               <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"></path>
             </svg>
           </button>
-          <button class="icon-button" id="notifications-button" aria-label="Notifications">♢<span class="notification-dot"></span></button>
+          <button class="icon-button" id="notifications-button" type="button" aria-label="Notifications"
+            aria-pressed="false">♢<span class="notification-dot"></span></button>
           <button class="scan-button" id="scan-button"><span class="scan-icon">↻</span> Scan repository</button>
         </div>
       </header>
@@ -134,7 +135,15 @@
             <div class="panel-heading">
               <div><span class="panel-kicker">Architecture health</span>
                 <h2>Looking strong</h2>
-              </div><button class="more-button" aria-label="More health options">•••</button>
+              </div>
+              <div class="panel-menu-wrap">
+                <button class="more-button" type="button" aria-label="More health options" aria-haspopup="menu"
+                  aria-expanded="false" aria-controls="health-options">•••</button>
+                <div class="panel-menu" id="health-options" role="menu" hidden>
+                  <button type="button" role="menuitem" data-view="timeline">View drift timeline</button>
+                  <button type="button" role="menuitem" data-view="violations">Review violations</button>
+                </div>
+              </div>
             </div>
             <div class="health-content">
               <div class="score-ring" style="--score: 87">
@@ -154,7 +163,15 @@
             <div class="panel-heading">
               <div><span class="panel-kicker">Repository snapshot</span>
                 <h2>my-app <span class="private-chip">PRIVATE</span></h2>
-              </div><button class="more-button" aria-label="More repository options">•••</button>
+              </div>
+              <div class="panel-menu-wrap">
+                <button class="more-button" type="button" aria-label="More repository options" aria-haspopup="menu"
+                  aria-expanded="false" aria-controls="repository-options">•••</button>
+                <div class="panel-menu" id="repository-options" role="menu" hidden>
+                  <button type="button" role="menuitem" data-view="architecture">Open architecture map</button>
+                  <button type="button" role="menuitem" data-action="export-report">Export report</button>
+                </div>
+              </div>
             </div>
             <div class="repo-tree">
               <div class="tree-root"><span class="folder-icon">⌄</span><strong>my-app/</strong><span
@@ -207,8 +224,8 @@
                 aria-label="Architecture health over time">
                 <defs>
                   <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#6366f1" stop-opacity=".28" />
-                    <stop offset="1" stop-color="#6366f1" stop-opacity="0" />
+                    <stop offset="0" stop-color="var(--accent)" stop-opacity=".24" />
+                    <stop offset="1" stop-color="var(--accent-bright)" stop-opacity="0" />
                   </linearGradient>
                 </defs>
                 <path class="grid-line" d="M0 20 H700 M0 60 H700 M0 100 H700 M0 140 H700 M0 180 H700" />
@@ -263,8 +280,9 @@
             <h1>Architecture <span class="heading-accent">map.</span></h1>
             <p>Your intended boundaries, rendered as a living system.</p>
           </div>
-          <div class="map-controls"><button class="icon-button" id="map-zoom-out" aria-label="Zoom out">−</button><span id="map-zoom-level">100%</span><button
-              class="icon-button" id="map-zoom-in" aria-label="Zoom in">+</button></div>
+          <div class="map-controls"><button class="icon-button" id="map-zoom-out" type="button" aria-label="Zoom out">−</button><span
+              id="map-zoom-level" role="status" aria-live="polite">100%</span><button class="icon-button" id="map-zoom-in"
+              type="button" aria-label="Zoom in">+</button></div>
         </div>
         <div class="map-toolbar panel">
           <div><span class="panel-kicker">my-app / main</span><strong>18 services · 6 layers · 142 files</strong></div>
@@ -278,7 +296,7 @@
           <div class="map-grid"></div><svg class="connections" viewBox="0 0 1100 560" preserveAspectRatio="none">
             <defs>
               <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
-                <path d="M0,0 L0,6 L6,3 z" fill="#667085" />
+                <path d="M0,0 L0,6 L6,3 z" fill="var(--accent)" />
               </marker>
             </defs>
             <path d="M175 270 H350" marker-end="url(#arrow)" />
@@ -327,7 +345,7 @@
           <div><span class="kicker">Historical signal</span>
             <h1>Drift <span class="heading-accent">timeline.</span></h1>
             <p>Architecture health across your repository’s most important commits.</p>
-          </div><button class="outline-button" id="export-report"><span>↓</span> Export report</button>
+          </div><button class="outline-button" id="export-report" data-action="export-report"><span>↓</span> Export report</button>
         </div>
         <div class="timeline-summary">
           <div class="panel timeline-score"><span class="panel-kicker">Current score</span><strong>87</strong><span
@@ -342,7 +360,8 @@
             <div><span class="panel-kicker">Architecture health</span>
               <h2>Commit history</h2>
             </div>
-            <div class="timeline-filter"><button class="filter-active">All commits</button><button>Drift only</button>
+            <div class="timeline-filter"><button class="filter-active" type="button" aria-pressed="true">All commits</button><button
+                type="button" aria-pressed="false">Drift only</button>
             </div>
           </div>
           <div class="timeline-track">

@@ -1,16 +1,21 @@
 :root {
-    --bg: #080a10;
+    --bg: #0a0b0f;
     --panel: #10131c;
     --panel-2: #151925;
     --line: #222838;
     --muted: #7c879c;
     --text: #eef1f8;
-    --indigo: #2563eb;
-    --purple: #8b5cf6;
+    --accent: #0740ea;
+    --accent-indigo: #1c2be8;
+    --accent-bright: var(--accent-indigo);
+    --accent-rgb: 7, 64, 234;
+    --accent-indigo-rgb: 28, 43, 232;
+    --indigo: var(--accent);
+    --purple: var(--accent-indigo);
     --green: #10b981;
     --amber: #f59e0b;
     --red: #ef4444;
-    --blue: #3b82f6;
+    --blue: var(--accent);
     --mono: 'DM Mono', monospace;
     --sans: 'Manrope', sans-serif
 }
@@ -25,7 +30,48 @@ body {
     color: var(--text);
     font-family: var(--sans);
     font-size: 13px;
-    letter-spacing: 0
+    letter-spacing: 0;
+    position: relative;
+    isolation: isolate;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    top: -50vh;
+    left: -15vw;
+    width: 130vw;
+    height: 200vh;
+    pointer-events: none;
+    opacity: .08;
+    filter: blur(80px);
+    will-change: transform;
+    background: linear-gradient(90deg,
+        transparent calc(50% - 100px),
+        rgba(var(--accent-rgb), 0) calc(50% - 55px),
+        rgba(var(--accent-rgb), .85) calc(50% - 25px),
+        rgba(var(--accent-indigo-rgb), .7) calc(50% + 25px),
+        rgba(var(--accent-indigo-rgb), 0) calc(50% + 55px),
+        transparent calc(50% + 100px));
+    transform: translate3d(-130vw, 0, 0) rotate(-35deg);
+    animation: scan-sweep 7s linear infinite;
+}
+
+body > .onboarding,
+body > .app-shell {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes scan-sweep {
+    from {
+        transform: translate3d(-130vw, 0, 0) rotate(-35deg);
+    }
+
+    to {
+        transform: translate3d(130vw, 0, 0) rotate(-35deg);
+    }
 }
 
 .onboarding {
@@ -33,9 +79,9 @@ body {
     display: grid;
     place-items: center;
     padding: 32px 20px;
-    background-color: var(--bg);
-    background-image: radial-gradient(#1d2332 1px, transparent 1px), radial-gradient(circle at 50% 35%, #1b2050 0, transparent 36%);
-    background-size: 24px 24px, 100% 100%;
+    background-color: transparent;
+    background-image: radial-gradient(rgba(124, 135, 156, .05) 1px, transparent 1px);
+    background-size: 24px 24px;
 }
 
 .onboarding:not(.visible) {
@@ -65,7 +111,7 @@ body {
     background: rgba(16, 19, 28, .94);
     border: 1px solid #2a3450;
     border-radius: 16px;
-    box-shadow: 0 30px 100px #0009, 0 0 70px #4f46e51a;
+    box-shadow: 0 30px 100px #0009, 0 0 70px rgba(var(--accent-rgb), .08);
     animation: fadeUp .45s ease;
 }
 
@@ -75,10 +121,10 @@ body {
     display: grid;
     place-items: center;
     margin: 0 auto 22px;
-    border: 1px solid #344479;
+    border: 1px solid rgba(var(--accent-rgb), .28);
     border-radius: 13px;
-    background: #151d3a;
-    box-shadow: 0 0 24px #4f46e533;
+    background: rgba(var(--accent-rgb), .08);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb), .12);
 }
 
 .onboarding-mark img {
@@ -126,7 +172,7 @@ body {
 
 .repo-input-wrap:focus-within {
     border-color: var(--indigo);
-    box-shadow: 0 0 0 3px #6366f11a;
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12);
 }
 
 .repo-input-wrap input {
@@ -147,14 +193,15 @@ body {
     margin-top: 12px;
     padding: 13px 14px;
     border-radius: 7px;
-    background: linear-gradient(100deg, #5961dc, #7659e8);
+    background: linear-gradient(100deg, var(--accent), var(--accent-bright));
+    color: #fff;
     font-size: 11px;
     font-weight: 800;
-    box-shadow: 0 8px 22px #4f46e533;
+    box-shadow: 0 8px 22px rgba(var(--accent-rgb), .16);
 }
 
 .onboarding-scan-button:hover {
-    background: linear-gradient(100deg, #6b72ed, #876bf4);
+    background: linear-gradient(100deg, var(--accent), var(--accent-indigo));
 }
 
 .onboarding-divider {
@@ -176,13 +223,13 @@ body {
 
 .sample-button {
     background: transparent;
-    color: #b7beff;
+    color: var(--accent-bright);
     font-size: 11px;
 }
 
 .sample-button span {
     margin-left: 5px;
-    color: #8c94ef;
+    color: var(--accent);
 }
 
 .sample-button:hover {
@@ -212,14 +259,14 @@ button {
 }
 
 button:focus-visible {
-    outline: 2px solid var(--blue);
+    outline: 2px solid var(--accent-bright);
     outline-offset: 2px
 }
 
 .app-shell {
     display: flex;
     min-height: 100vh;
-    background-image: radial-gradient(#1d2332 1px, transparent 1px);
+    background-image: radial-gradient(rgba(124, 135, 156, .05) 1px, transparent 1px);
     background-size: 24px 24px
 }
 
@@ -299,7 +346,7 @@ button:focus-visible {
 .profile-avatar {
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #293b70, #6366f1);
+    background: linear-gradient(135deg, var(--accent), var(--accent-bright));
     font-size: 11px;
     font-weight: 800;
     border-radius: 6px;
@@ -362,12 +409,12 @@ button:focus-visible {
 
 .nav-item:hover,
 .nav-item.active {
-    background: #171b2a;
+    background: rgba(var(--accent-rgb), .1);
     color: #fff
 }
 
 .nav-item.active {
-    box-shadow: inset 2px 0 var(--indigo)
+    box-shadow: inset 2px 0 var(--accent)
 }
 
 .nav-icon {
@@ -378,7 +425,7 @@ button:focus-visible {
 }
 
 .nav-item.active .nav-icon {
-    color: #a9aaff
+    color: var(--accent-bright)
 }
 
 .nav-count {
@@ -531,16 +578,17 @@ button:focus-visible {
 
 .scan-button,
 .outline-button {
-    background: var(--indigo);
+    background: linear-gradient(100deg, var(--accent), var(--accent-bright));
+    color: #fff;
     padding: 10px 14px;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 800;
-    box-shadow: 0 5px 15px #4f46e533
+    box-shadow: 0 5px 15px rgba(var(--accent-rgb), .18)
 }
 
 .scan-button:hover {
-    background: #7577fa
+    background: linear-gradient(100deg, var(--accent), var(--accent-indigo))
 }
 
 .scan-icon {
@@ -557,7 +605,8 @@ button:focus-visible {
 
 .outline-button:hover {
     border-color: var(--indigo);
-    background: #16192c
+    background: rgba(var(--accent-rgb), .08);
+    color: var(--accent-bright)
 }
 
 .page-section {
@@ -623,9 +672,11 @@ button:focus-visible {
 }
 
 .panel {
-    background: rgba(16, 19, 28, .92);
-    border: 1px solid var(--line);
-    border-radius: 9px
+    background: rgba(16, 19, 28, .82);
+    border: 1px solid rgba(var(--accent-rgb), .16);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px)
 }
 
 .health-panel {
@@ -666,8 +717,40 @@ button:focus-visible {
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: conic-gradient(var(--green) calc(var(--score) * 1%), #202738 0);
+    background: conic-gradient(var(--accent) calc(var(--score) * 1%), #202738 0);
     position: relative
+}
+
+.score-ring {
+    isolation: isolate;
+}
+
+.score-ring::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: -10px;
+    border-radius: inherit;
+    background: radial-gradient(circle, transparent 61%, rgba(var(--accent-rgb), .3) 74%, transparent 88%);
+    filter: blur(8px);
+    opacity: .45;
+    pointer-events: none;
+    animation: score-ring-glow 3.2s ease-in-out infinite;
+}
+
+.score-ring::before {
+    z-index: 1;
+}
+
+@keyframes score-ring-glow {
+    0%,
+    100% {
+        opacity: .35;
+    }
+
+    50% {
+        opacity: .8;
+    }
 }
 
 .score-ring:before {
@@ -680,6 +763,7 @@ button:focus-visible {
 
 .score-value {
     position: relative;
+    z-index: 2;
     display: flex;
     align-items: baseline
 }
@@ -848,13 +932,13 @@ button:focus-visible {
 }
 
 .layer-chip.frontend {
-    color: #6bcdf7;
-    background: #103343
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), .12)
 }
 
 .layer-chip.backend {
-    color: #b69cff;
-    background: #281a47
+    color: var(--accent-bright);
+    background: rgba(var(--accent-indigo-rgb), .12)
 }
 
 .layer-chip.data {
@@ -998,17 +1082,17 @@ button:focus-visible {
 
 .line {
     fill: none;
-    stroke: #7779ed;
+    stroke: var(--accent);
     stroke-width: 2
 }
 
 .chart-point-halo {
-    fill: #7779ed;
-    opacity: .2
+    fill: var(--accent);
+    opacity: .16
 }
 
 .chart-point {
-    fill: #a3a5ff;
+    fill: var(--accent-bright);
     stroke: #10131c;
     stroke-width: 2
 }
@@ -1078,8 +1162,8 @@ button:focus-visible {
 }
 
 .event-avatar.purple {
-    color: #b6a6ff;
-    background: #2d2450
+    color: var(--accent-bright);
+    background: rgba(var(--accent-indigo-rgb), .12)
 }
 
 .event-avatar.amber {
@@ -1190,14 +1274,21 @@ button:focus-visible {
 
 .connections path {
     fill: none;
-    stroke: #515b71;
+    stroke: rgba(var(--accent-rgb), .62);
     stroke-width: 1.5;
-    stroke-dasharray: 4 4
+    stroke-dasharray: 5 5;
+    animation: connector-flow 1.6s linear infinite
 }
 
 .connections .external-path {
-    stroke: #657086;
+    stroke: rgba(var(--accent-indigo-rgb), .62);
     opacity: .7
+}
+
+@keyframes connector-flow {
+    to {
+        stroke-dashoffset: -20;
+    }
 }
 
 .map-node {
@@ -1207,9 +1298,11 @@ button:focus-visible {
     gap: 10px;
     min-width: 158px;
     padding: 12px 13px;
-    border-radius: 8px;
-    background: #171b27;
-    border: 1px solid #343d52;
+    border-radius: 10px;
+    background: rgba(23, 27, 39, .82);
+    border: 1px solid rgba(var(--accent-rgb), .34);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     box-shadow: 0 8px 18px #03050a66
 }
 
@@ -1239,12 +1332,12 @@ button:focus-visible {
 
 .blue-icon {
     color: var(--blue);
-    background: #113445
+    background: rgba(var(--accent-rgb), .12)
 }
 
 .indigo-icon {
-    color: #a29fff;
-    background: #282551
+    color: var(--accent-bright);
+    background: rgba(var(--accent-indigo-rgb), .12)
 }
 
 .green-icon {
@@ -1254,8 +1347,8 @@ button:focus-visible {
 }
 
 .purple-icon {
-    color: #c09cff;
-    background: #2e2151
+    color: var(--accent-bright);
+    background: rgba(var(--accent-indigo-rgb), .12)
 }
 
 .gray-icon {
@@ -1266,13 +1359,13 @@ button:focus-visible {
 .client-node {
     left: 4%;
     top: 44%;
-    border-color: #20536c
+    border-color: rgba(var(--accent-rgb), .45)
 }
 
 .gateway-node {
     left: 32%;
     top: 44%;
-    border-color: #4a4386
+    border-color: rgba(var(--accent-indigo-rgb), .45)
 }
 
 .service-node {
@@ -1294,7 +1387,7 @@ button:focus-visible {
 
 .db-node {
     left: 82%;
-    border-color: #59418b
+    border-color: rgba(var(--accent-indigo-rgb), .45)
 }
 
 .user-db {
@@ -1600,14 +1693,14 @@ button:focus-visible {
 
 .ui-box {
     color: var(--blue);
-    background: #102f3c;
-    border-color: #27667c
+    background: rgba(var(--accent-rgb), .1);
+    border-color: rgba(var(--accent-rgb), .42)
 }
 
 .db-box {
-    color: #bb9fff;
-    background: #2c2048;
-    border-color: #62489a
+    color: var(--accent-bright);
+    background: rgba(var(--accent-indigo-rgb), .1);
+    border-color: rgba(var(--accent-indigo-rgb), .42)
 }
 
 .broken-arrow {
@@ -1704,7 +1797,7 @@ button:focus-visible {
 
 .scan-folder {
     font-size: 41px;
-    color: #7275ec;
+    color: var(--accent);
     position: relative
 }
 
@@ -1714,7 +1807,7 @@ button:focus-visible {
     width: 65px;
     left: -12px;
     top: 7px;
-    border: 2px solid #a6a5ff;
+    border: 2px solid var(--accent-bright);
     border-left: 0;
     border-right: 0;
     opacity: .6;
@@ -1757,7 +1850,7 @@ button:focus-visible {
     display: block;
     width: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--indigo), var(--purple));
+    background: linear-gradient(90deg, var(--accent), var(--accent-bright));
     transition: width .45s ease
 }
 
@@ -1770,7 +1863,7 @@ button:focus-visible {
 }
 
 .scan-progress strong {
-    color: #b0b4ff
+    color: var(--accent-bright)
 }
 
 .scan-checklist {
@@ -1807,8 +1900,8 @@ button:focus-visible {
 }
 
 .scan-step.active span {
-    color: #a6a5ff;
-    border-color: #6e70d9
+    color: var(--accent-bright);
+    border-color: var(--accent)
 }
 
 .scan-step.done {
@@ -1905,6 +1998,10 @@ button:focus-visible {
     .workspace-switcher {
         padding: 7px;
         justify-content: center
+    }
+
+    .workspace-avatar {
+        color: #fff;
     }
 
     .workspace-avatar {

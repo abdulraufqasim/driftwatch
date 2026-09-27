@@ -22,6 +22,7 @@ const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
 const mobileSidebarQuery = window.matchMedia('(max-width: 700px)');
+const panelMenuToggles = [...document.querySelectorAll('.more-button')];
 let scanTimer;
 let mapZoom = 100;
 let isSidebarOpen = !mobileSidebarQuery.matches;
@@ -74,13 +75,27 @@ themeToggles.forEach((button) => {
 });
 
 function showView(viewName) {
+  closePanelMenus(true);
   sections.forEach((section) => {
     section.classList.toggle('active-view', section.id === `${viewName}-view`);
   });
   document.querySelectorAll('.nav-item').forEach((item) => {
-    item.classList.toggle('active', item.dataset.view === viewName);
+    const isActive = item.dataset.view === viewName;
+    item.classList.toggle('active', isActive);
+    if (isActive) item.setAttribute('aria-current', 'page');
+    else item.removeAttribute('aria-current');
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closePanelMenus(restoreFocus = false) {
+  panelMenuToggles.forEach((button) => {
+    const menu = document.getElementById(button.getAttribute('aria-controls'));
+    const wasOpen = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', 'false');
+    menu.hidden = true;
+    if (restoreFocus && wasOpen && menu.contains(document.activeElement)) button.focus();
+  });
 }
 
 navItems.forEach((item) => {
@@ -93,6 +108,8 @@ navItems.forEach((item) => {
 function showToast(message) {
   const toast = document.createElement('div');
   toast.className = 'toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
   toast.textContent = message;
   document.body.append(toast);
   requestAnimationFrame(() => toast.classList.add('visible'));
@@ -188,6 +205,9 @@ document.querySelectorAll('.filter-active, .timeline-filter button').forEach((bu
   button.addEventListener('click', () => {
     button.parentElement.querySelectorAll('button').forEach((item) => item.classList.remove('filter-active'));
     button.classList.add('filter-active');
+    button.parentElement.querySelectorAll('button').forEach((item) => {
+      item.setAttribute('aria-pressed', String(item === button));
+    });
     if (button.closest('.timeline-filter')) {
       const showDrift = button.textContent.trim() === 'Drift only';
       document.querySelectorAll('.timeline-commit').forEach((commit) => {
@@ -199,6 +219,7 @@ document.querySelectorAll('.filter-active, .timeline-filter button').forEach((bu
 });
 
 document.getElementById('notifications-button').addEventListener('click', () => {
+  document.getElementById('notifications-button').setAttribute('aria-pressed', 'true');
   document.querySelector('.notification-dot').hidden = true;
   showToast('You are all caught up. No new architecture alerts.');
 });
@@ -209,30 +230,67 @@ document.getElementById('activity-button').addEventListener('click', () => {
 });
 
 document.querySelectorAll('.more-button').forEach((button) => {
-  button.addEventListener('click', () => showToast(`${button.closest('.panel').querySelector('h2').textContent} options are ready.`));
+  button.addEventListener('click', () => {
+    const willOpen = button.getAttribute('aria-expanded') !== 'true';
+    closePanelMenus();
+    button.setAttribute('aria-expanded', String(willOpen));
+    const menu = document.getElementById(button.getAttribute('aria-controls'));
+    menu.hidden = !willOpen;
+    if (willOpen) menu.querySelector('[role="menuitem"]').focus();
+  });
 });
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.panel-menu-wrap')) closePanelMenus();
+});
+
+document.addEventListener('keydown', (event) => {
+  const openMenu = event.target instanceof Element ? event.target.closest('.panel-menu') : null;
+  if (event.key === 'Escape') {
+    closePanelMenus(true);
+  } else if (openMenu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+    const items = [...openMenu.querySelectorAll('[role="menuitem"]')];
+    const index = items.indexOf(document.activeElement);
+    const nextIndex = event.key === 'Home' ? 0
+      : event.key === 'End' ? items.length - 1
+        : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+    event.preventDefault();
+    items[nextIndex].focus();
+  }
+});
+
+function updateMapZoom() {
+  mapCanvas.style.setProperty('--map-zoom', `${mapZoom / 100}`);
+  mapZoomLevel.textContent = `${mapZoom}%`;
+  document.getElementById('map-zoom-in').disabled = mapZoom >= 130;
+  document.getElementById('map-zoom-out').disabled = mapZoom <= 70;
+}
 
 document.getElementById('map-zoom-in').addEventListener('click', () => {
   mapZoom = Math.min(130, mapZoom + 10);
-  mapCanvas.style.setProperty('--map-zoom', `${mapZoom / 100}`);
-  mapZoomLevel.textContent = `${mapZoom}%`;
+  updateMapZoom();
 });
 
 document.getElementById('map-zoom-out').addEventListener('click', () => {
   mapZoom = Math.max(70, mapZoom - 10);
-  mapCanvas.style.setProperty('--map-zoom', `${mapZoom / 100}`);
-  mapZoomLevel.textContent = `${mapZoom}%`;
+  updateMapZoom();
 });
+updateMapZoom();
 
-document.getElementById('export-report').addEventListener('click', () => {
+document.querySelectorAll('[data-action="export-report"]').forEach((button) => button.addEventListener('click', () => {
   const report = 'Driftwatch architecture report\n\nRepository: my-app\nHealth score: 87 / 100\nHealthy paths: 24\nWarnings: 2\nCritical issues: 0\n';
+  const reportUrl = URL.createObjectURL(new Blob([report], { type: 'text/plain' }));
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(new Blob([report], { type: 'text/plain' }));
+  link.href = reportUrl;
   link.download = 'driftwatch-my-app-report.txt';
+  link.hidden = true;
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(reportUrl), 1000);
+  closePanelMenus(true);
   showToast('Report exported successfully.');
-});
+}));
 
 document.querySelectorAll('.toggle-input').forEach((input) => {
   input.addEventListener('change', () => showToast(`${input.closest('.setting-row').querySelector('strong').textContent} ${input.checked ? 'enabled' : 'disabled'}.`));
