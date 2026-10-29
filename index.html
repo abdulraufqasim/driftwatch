@@ -14,8 +14,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=11" />
-  <link rel="stylesheet" href="overrides.css?v=11" />
+  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="overrides.css?v=13" />
 </head>
 
 <body>
@@ -46,7 +46,7 @@
       <h1>Scan a repository<span class="heading-accent">.</span></h1>
       <p class="onboarding-copy">Connect a Git repository to reveal its architecture, dependencies, and drift signals.</p>
       <p class="team-credit">Project made by <strong> Abdul Rauf & Hadiqa Ghanchi </strong></p>
-      <section class="github-connect-panel" aria-label="GitHub connection">
+      <section class="github-connect-panel" aria-label="Optional GitHub account">
         <button class="github-connect-button" id="github-connect" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.56.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.77 1.93 3.1 1.47.1-.72.39-1.21.7-1.49-2.48-.28-5.08-1.24-5.08-5.52 0-1.22.44-2.21 1.15-2.99-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.14a10.6 10.6 0 0 1 5.56 0c2.11-1.44 3.05-1.14 3.05-1.14.61 1.54.23 2.68.11 2.96.72.78 1.15 1.77 1.15 2.99 0 4.29-2.61 5.23-5.1 5.51.4.35.75 1.03.75 2.08v3.08c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
           Connect with GitHub
@@ -64,7 +64,7 @@
         </div>
         <div class="github-selection" id="github-selection" aria-live="polite" hidden></div>
       </section>
-      <form class="repo-form" id="repo-form">
+      <form class="repo-form" id="repo-form" novalidate>
         <label for="repo-url">Or paste a public repository URL</label>
         <div class="repo-input-wrap">
           <span aria-hidden="true">⌘</span>
@@ -74,8 +74,8 @@
         <button class="onboarding-scan-button" id="onboarding-scan" type="submit" disabled><span class="scan-icon">↻</span> Scan repository</button>
       </form>
       <div class="onboarding-divider"><span>or</span></div>
-      <button class="sample-button" id="sample-button" type="button">Try demo project: <span>my-app →</span></button>
-      <small class="onboarding-note">GitHub is used only to list public repositories. Scanning is not available in this phase.</small>
+      <button class="sample-button" id="sample-button" type="button">Try demo</button>
+      <small class="onboarding-note">Public repositories are cloned temporarily for read-only analysis. Private repositories are not supported yet.</small>
     </div>
   </div>
 
@@ -86,8 +86,8 @@
         <img class="brand-icon-collapsed" src="drift-icon.png" srcset="drift-icon.png 1x, drift-icon@2x.png 2x" alt="Driftwatch" />
       </div>
       <div class="workspace-switcher">
-        <div class="workspace-avatar">M</div>
-        <div><span class="eyebrow">Workspace</span><strong>my-app</strong></div>
+        <div class="workspace-avatar" id="workspace-avatar">?</div>
+        <div><span class="eyebrow">Workspace</span><strong id="workspace-name">No repository</strong></div>
         <span class="chevron">⌄</span>
       </div>
       <nav class="nav-menu" aria-label="Main navigation">
@@ -97,18 +97,18 @@
         <button class="nav-item" data-view="timeline"><span class="nav-icon">◷</span>Drift timeline</button>
         <span class="nav-label nav-label-spaced">Manage</span>
         <button class="nav-item" data-view="violations"><span class="nav-icon">△</span>Violations <span
-            class="nav-count">3</span></button>
+           class="nav-count" id="violation-count" hidden>0</span></button>
         <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
       </nav>
       <div class="sidebar-bottom">
         <div class="guardian-card">
           <div class="guardian-orb"><span></span></div>
-          <div><strong>Guardian active</strong><small>Last scan 8m ago</small></div>
-          <span class="live-dot"></span>
+          <div><strong id="guardian-status">Awaiting repository</strong><small id="guardian-last-scan">Connect a repository to begin</small></div>
+          <span class="live-dot" hidden></span>
         </div>
         <div class="profile-row">
-          <div class="profile-avatar">QForge</div>
-          <div><strong>Quantum Forge</strong><small>Owner</small></div><span class="more">•••</span>
+          <div class="profile-avatar" id="repository-owner-avatar">—</div>
+          <div><strong id="repository-owner-name">No repository</strong><small>Repository owner</small></div><span class="more">•••</span>
         </div>
       </div>
     </aside>
@@ -119,10 +119,10 @@
         <div class="topbar-context">
           <button class="icon-button sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Collapse navigation"
             aria-controls="sidebar" aria-expanded="true" title="Collapse navigation">☰</button>
-          <div class="breadcrumb"><span>Workspace</span><span>/</span><strong>my-app</strong></div>
+          <div class="breadcrumb"><span>Workspace</span><span>/</span><strong id="workspace-repository-name">No repository</strong></div>
         </div>
         <div class="top-actions">
-          <span class="last-scan"><span class="status-dot"></span> Scanned 8 min ago</span>
+            <span class="last-scan" id="topbar-scan-state"><span class="status-dot"></span> No scan yet</span>
           <button class="icon-button theme-toggle" type="button" data-theme-toggle
             aria-label="Switch to light mode" title="Switch to light mode" aria-pressed="false">
             <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -140,21 +140,31 @@
       </header>
 
       <section class="page-section active-view" id="dashboard-view">
-        <div class="page-heading">
-          <div><span class="kicker">Monday, September 22, 2026</span>
-            <h1>Good morning, Rookie<span class="heading-accent">.</span></h1>
-            <p>Here's the architectural pulse of <strong>my-app</strong>.</p>
+        <div class="page-heading" id="overview-heading">
+          <div><span class="kicker" id="scan-date">Repository overview</span>
+            <h1>Architecture overview<span class="heading-accent">.</span></h1>
+            <p>Repository structure, inferred layers, and module dependencies.</p>
           </div>
           <button class="outline-button" data-view="architecture"><span>⌘</span> View architecture</button>
         </div>
+        <form class="repo-form dashboard-repo-form" id="dashboard-repo-form" novalidate>
+          <label for="dashboard-repo-url">Public GitHub repository URL</label>
+          <div class="repo-input-wrap">
+            <span aria-hidden="true">⌘</span>
+            <input id="dashboard-repo-url" type="url" placeholder="https://github.com/owner/repository" autocomplete="url" />
+            <button class="onboarding-scan-button" type="submit" id="dashboard-scan-button">Scan</button>
+            <button class="outline-button" id="dashboard-demo-button" type="button">Try demo</button>
+          </div>
+          <p class="github-message" id="dashboard-scan-message" role="status" aria-live="polite" hidden></p>
+        </form>
         <div class="search-row"><label class="search-box"><span>⌕</span><input id="repo-search" type="search"
               placeholder="Search files, services, or dependencies..." /></label><span class="search-hint">Try
             <kbd>frontend</kbd> or <kbd>database</kbd></span></div>
         <div class="dashboard-grid">
           <article class="panel health-panel">
             <div class="panel-heading">
-              <div><span class="panel-kicker">Architecture health</span>
-                <h2>Looking strong</h2>
+              <div><span class="panel-kicker">Repository inventory</span>
+                <h2 id="health-title">Awaiting repository scan</h2>
               </div>
               <div class="panel-menu-wrap">
                 <button class="more-button" type="button" aria-label="More health options" aria-haspopup="menu"
@@ -166,23 +176,24 @@
               </div>
             </div>
             <div class="health-content">
-              <div class="score-ring" style="--score: 87">
-                <div class="score-value"><strong>87</strong><span>/ 100</span></div>
+            <div class="score-ring" id="health-ring" style="--score: 0">
+              <div class="score-value"><strong id="health-score">--</strong><span>score</span></div>
               </div>
-              <div class="health-summary"><span class="healthy-badge"><span>✓</span> Healthy</span>
-                <p>Your codebase is following the intended architecture with a few areas worth watching.</p>
-                <div class="metric-row"><span>+4.2% <small>vs last scan</small></span><span class="mono">09:42:18</span>
+            <div class="health-summary"><span class="healthy-badge" id="structure-badge"><span>✓</span> Structure analyzed</span>
+              <p id="health-summary">Scan a GitHub repository to see its detected structure and dependencies.</p>
+              <div class="metric-row"><span id="cross-layer-summary">No scan yet</span><span class="mono" id="scan-timestamp">--</span>
                 </div>
               </div>
             </div>
-            <div class="health-footer"><span><i class="legend-dot green"></i> 24 healthy</span><span><i
-                  class="legend-dot amber"></i> 2 warnings</span><span><i class="legend-dot red"></i> 0 critical</span>
+            <div class="health-footer"><span><i class="legend-dot green"></i> <span id="healthy-count">-- healthy</span></span><span><i
+                class="legend-dot amber"></i> <span id="warning-count">-- warnings</span></span><span><i class="legend-dot red"></i>
+              <span id="critical-count">-- critical</span></span>
             </div>
           </article>
           <article class="panel snapshot-panel">
             <div class="panel-heading">
               <div><span class="panel-kicker">Repository snapshot</span>
-                <h2>my-app <span class="private-chip">PRIVATE</span></h2>
+                <h2 id="repository-name">No repository scanned</h2>
               </div>
               <div class="panel-menu-wrap">
                 <button class="more-button" type="button" aria-label="More repository options" aria-haspopup="menu"
@@ -194,103 +205,57 @@
               </div>
             </div>
             <div class="repo-tree">
-              <div class="tree-root"><span class="folder-icon">⌄</span><strong>my-app/</strong><span
-                  class="tree-meta">main · 4h ago</span></div>
-              <div class="tree-line"><span class="tree-branch">├</span><span
-                  class="folder-mini blue">▰</span><span>frontend/</span><span class="layer-chip frontend">UI
-                  layer</span></div>
-              <div class="tree-line"><span class="tree-branch">├</span><span
-                  class="folder-mini purple">▰</span><span>backend/</span><span class="layer-chip backend">Logic
-                  layer</span></div>
-              <div class="tree-line"><span class="tree-branch">└</span><span
-                  class="folder-mini green">▰</span><span>database/</span><span class="layer-chip data">Data
-                  layer</span></div>
+              <div class="tree-root" id="repository-tree-root"><span class="folder-icon">⌄</span><strong>Repository</strong><span
+                  class="tree-meta">not scanned</span></div>
+              <div class="repository-tree-entries" id="repository-tree-entries"></div>
+              <div class="repository-manifests" id="repository-manifests"></div>
             </div>
-            <div class="snapshot-footer"><span><strong>142</strong> files</span><span><strong>18</strong>
-                services</span><span><strong>6</strong> layers</span></div>
+            <div class="snapshot-footer"><span><strong id="repository-file-count">--</strong> files</span><span><strong id="repository-folder-count">--</strong>
+                folders</span><span><strong id="repository-layer-count">--</strong> layers</span></div>
+            <div class="layer-breakdown" id="repository-layer-breakdown" aria-label="File count by detected layer"></div>
           </article>
           <article class="panel drift-panel">
             <div class="panel-heading">
-              <div><span class="panel-kicker">Drift signals</span>
-                <h2>2 to review</h2>
+              <div><span class="panel-kicker">Static analysis observations</span>
+                <h2 id="drift-title">Cross-layer imports</h2>
               </div><span class="warning-symbol">△</span>
             </div>
-            <div class="signal-list">
-              <div class="signal-item"><span class="signal-icon warning">!</span>
-                <div><strong>New dependency path</strong><small>frontend → database</small></div><span
-                  class="signal-time">12m</span>
-              </div>
-              <div class="signal-item"><span class="signal-icon amber">↗</span>
-                <div><strong>Boundary crossed</strong><small>orders → auth service</small></div><span
-                  class="signal-time">2h</span>
-              </div>
-            </div>
-            <button class="text-button" data-view="violations">Review all signals <span>→</span></button>
+            <div class="signal-list" id="structure-observations"><p class="empty-state">No repository scan yet.</p></div>
+            <button class="text-button" data-view="architecture">View dependency map <span>→</span></button>
           </article>
           <article class="panel timeline-panel">
             <div class="panel-heading">
-              <div><span class="panel-kicker">Drift over time</span>
-                <h2>Stable architecture</h2>
-              </div><button class="text-button" data-view="timeline">View timeline <span>→</span></button>
+              <div><span class="panel-kicker">Repository history</span>
+                <h2 id="language-chart-title">Drift timeline</h2>
+              </div><button class="text-button" id="load-dashboard-history" type="button">Load history</button>
             </div>
-            <div class="chart-wrap">
-              <div class="chart-y-labels">
-                <span>100</span>
-                <span>75</span>
-                <span>50</span>
-                <span>25</span>
-                <span>0</span>
-              </div><svg class="drift-chart" viewBox="0 0 700 180" preserveAspectRatio="none"
-                aria-label="Architecture health over time">
-                <defs>
-                  <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="var(--accent)" stop-opacity=".24" />
-                    <stop offset="1" stop-color="var(--accent-bright)" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path class="grid-line" d="M0 20 H700 M0 60 H700 M0 100 H700 M0 140 H700 M0 180 H700" />
-                <path class="area"
-                  d="M0 67 C40 65 55 75 92 67 S155 52 188 65 S250 78 285 70 S335 58 365 61 S425 78 458 67 S500 52 535 59 S590 42 620 48 S670 35 700 38 L700 180 L0 180 Z" />
-                <path class="line"
-                  d="M0 67 C40 65 55 75 92 67 S155 52 188 65 S250 78 285 70 S335 58 365 61 S425 78 458 67 S500 52 535 59 S590 42 620 48 S670 35 700 38" />
-                <circle cx="620" cy="48" r="5" class="chart-point" />
-                <circle cx="620" cy="48" r="10" class="chart-point-halo" />
-              </svg>
+            <p class="history-status empty-state" id="dashboard-history-status" role="status" aria-live="polite">Load history to compare health scores across commits.</p>
+            <div class="history-chart-container" id="dashboard-history-chart" aria-label="Repository health score history">
             </div>
-            <div class="chart-labels"><span>May 22</span><span>Jun 19</span><span>Jul 17</span><span>Aug
-                14</span><span>Sep 22</span></div>
           </article>
         </div>
         <div class="feature-strip">
           <button class="feature-item" data-view="violations"><span class="feature-icon warning-feature">△</span>
-            <div><strong>Drift detection</strong><small>Find violations before they become problems.</small></div>
+            <div><strong>Import observations</strong><small>Review local imports that cross inferred layers.</small></div>
           </button>
           <button class="feature-item" data-view="architecture"><span class="feature-icon network-feature">⌘</span>
-            <div><strong>Blast radius</strong><small>See everything a change could affect.</small></div>
+            <div><strong>Dependency graph</strong><small>Explore imports between detected modules.</small></div>
           </button>
           <button class="feature-item" data-view="architecture"><span class="feature-icon map-feature">◇</span>
-            <div><strong>Live architecture</strong><small>Always-current diagrams, never stale.</small></div>
+            <div><strong>Repository layers</strong><small>Inspect folder layers inferred by static analysis.</small></div>
           </button>
           <button class="feature-item" data-view="timeline"><span class="feature-icon pulse-feature">⌁</span>
-            <div><strong>Health score</strong><small>Track architectural cleanliness over time.</small></div>
+            <div><strong>Commit history</strong><small>Review recent commits from the cloned repository.</small></div>
           </button>
         </div>
         <div class="section-heading">
-          <div><span class="panel-kicker">Guardian activity</span>
-            <h2>Recent changes</h2>
+          <div><span class="panel-kicker">History scan</span>
+            <h2>Repository commits</h2>
           </div><button class="text-button" id="activity-button">View all activity <span>→</span></button>
         </div>
         <div class="activity-table panel">
           <div class="table-head"><span>EVENT</span><span>STATUS</span><span>COMMIT</span><span>TIME</span></div>
-          <div class="table-row"><span class="event-name"><span
-                class="event-avatar purple">⌁</span><span><strong>Repository scan completed</strong><small>24 healthy
-                  paths verified</small></span></span><span><span class="healthy-badge small"><span>✓</span> No
-                drift</span></span><span class="mono">a8c31f2</span><span class="mono muted">8 min ago</span></div>
-          <div class="table-row"><span class="event-name"><span
-                class="event-avatar amber">△</span><span><strong>Dependency boundary
-                  changed</strong><small>frontend/orders.ts → database/query.ts</small></span></span><span><span
-                class="status-pill warning-pill">Review</span></span><span class="mono">f42d90a</span><span
-              class="mono muted">12 min ago</span></div>
+          <div id="activity-rows"><div class="empty-state">Repository commits appear after a scan.</div></div>
         </div>
       </section>
 
@@ -298,117 +263,50 @@
         <div class="page-heading">
           <div><span class="kicker">System topology</span>
             <h1>Architecture <span class="heading-accent">map.</span></h1>
-            <p>Your intended boundaries, rendered as a living system.</p>
+            <p>Top-level modules and in-repository imports inferred from source files.</p>
           </div>
           <div class="map-controls"><button class="icon-button" id="map-zoom-out" type="button" aria-label="Zoom out">−</button><span
               id="map-zoom-level" role="status" aria-live="polite">100%</span><button class="icon-button" id="map-zoom-in"
               type="button" aria-label="Zoom in">+</button></div>
         </div>
         <div class="map-toolbar panel">
-          <div><span class="panel-kicker">my-app / main</span><strong>18 services · 6 layers · 142 files</strong></div>
+          <div><span class="panel-kicker" id="map-repository-name">No repository scanned</span><strong id="map-summary">Scan a repository to build its actual module and dependency map.</strong></div>
           <div class="legend"><span><i class="legend-dot frontend-bg"></i>Frontend</span><span><i
                 class="legend-dot backend-bg"></i>Backend</span><span><i
                 class="legend-dot service-bg"></i>Services</span><span><i
-                class="legend-dot database-bg"></i>Database</span><span><i
-                class="legend-dot external-bg"></i>External</span></div>
+                class="legend-dot external-bg"></i>Shared</span><span><i
+                class="legend-dot database-bg"></i>Database</span></div>
         </div>
         <div class="architecture-canvas panel">
-          <div class="map-grid"></div><svg class="connections" viewBox="0 0 1100 560" preserveAspectRatio="none">
-            <defs>
-              <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
-                <path d="M0,0 L0,6 L6,3 z" fill="var(--accent)" />
-              </marker>
-            </defs>
-            <path d="M175 270 H350" marker-end="url(#arrow)" />
-            <path d="M500 270 H610 V150 H710" marker-end="url(#arrow)" />
-            <path d="M500 270 H710" marker-end="url(#arrow)" />
-            <path d="M500 270 H610 V390 H710" marker-end="url(#arrow)" />
-            <path d="M810 150 H950" marker-end="url(#arrow)" />
-            <path d="M810 270 H950" marker-end="url(#arrow)" />
-            <path d="M810 390 H950" marker-end="url(#arrow)" />
-            <path class="external-path" d="M500 270 H590 V500 H850" marker-end="url(#arrow)" />
-          </svg>
-          <div class="map-node client-node"><span class="node-icon blue-icon">◇</span>
-            <div><strong>Web App</strong><small>frontend /</small></div>
+          <div class="map-grid"></div>
+          <div class="generated-map-content" id="generated-map-content">
+            <p class="empty-state">The dependency map will show modules and local imports detected in the repository.</p>
           </div>
-          <div class="map-node gateway-node"><span class="node-icon indigo-icon">⇄</span>
-            <div><strong>API Gateway</strong><small>backend / gateway</small></div>
-          </div>
-          <div class="map-node service-node user-node"><span class="node-icon green-icon">●</span>
-            <div><strong>User Service</strong><small>services / user</small></div>
-          </div>
-          <div class="map-node service-node product-node"><span class="node-icon green-icon">●</span>
-            <div><strong>Product Service</strong><small>services / product</small></div>
-          </div>
-          <div class="map-node service-node order-node"><span class="node-icon green-icon">●</span>
-            <div><strong>Order Service</strong><small>services / order</small></div>
-          </div>
-          <div class="map-node db-node user-db"><span class="node-icon purple-icon">▤</span>
-            <div><strong>Users DB</strong><small>database / users</small></div>
-          </div>
-          <div class="map-node db-node product-db"><span class="node-icon purple-icon">▤</span>
-            <div><strong>Products DB</strong><small>database / products</small></div>
-          </div>
-          <div class="map-node db-node order-db"><span class="node-icon purple-icon">▤</span>
-            <div><strong>Orders DB</strong><small>database / orders</small></div>
-          </div>
-          <div class="map-node external-node"><span class="node-icon gray-icon">↗</span>
-            <div><strong>External APIs</strong><small>integrations / *</small></div>
-          </div>
-          <div class="map-label label-intended">INTENDED FLOW</div>
-          <div class="map-label label-external">EXTERNAL BOUNDARY</div>
         </div>
       </section>
 
       <section class="page-section" id="timeline-view">
         <div class="page-heading">
-          <div><span class="kicker">Historical signal</span>
+        <div><span class="kicker">Repository history</span>
             <h1>Drift <span class="heading-accent">timeline.</span></h1>
-            <p>Architecture health across your repository’s most important commits.</p>
+            <p>Recent commits from the repository’s shallow clone; commits are history only, not drift analysis.</p>
           </div><button class="outline-button" id="export-report" data-action="export-report"><span>↓</span> Export report</button>
         </div>
         <div class="timeline-summary">
-          <div class="panel timeline-score"><span class="panel-kicker">Current score</span><strong>87</strong><span
-              class="positive">↗ 4.2% this month</span></div>
-          <div class="panel timeline-score"><span class="panel-kicker">Healthy commits</span><strong>24 <small>/
-                28</small></strong><span class="muted">85.7% of history</span></div>
-          <div class="panel timeline-score"><span class="panel-kicker">First drift</span><strong class="date-value">Aug
-              14</strong><span class="muted">commit f42d90a</span></div>
+          <div class="panel timeline-score"><span class="panel-kicker">Files analyzed</span><strong id="timeline-file-count">--</strong><span
+              class="muted">Current repository scan</span></div>
+          <div class="panel timeline-score"><span class="panel-kicker">Commits analyzed</span><strong id="timeline-commit-count">--</strong><span class="muted">Health points returned</span></div>
+          <div class="panel timeline-score"><span class="panel-kicker">Layers detected</span><strong id="timeline-module-count">--</strong><span class="muted">From the current scan</span></div>
         </div>
         <div class="panel full-timeline">
           <div class="timeline-header">
-            <div><span class="panel-kicker">Architecture health</span>
-              <h2>Commit history</h2>
-            </div>
-            <div class="timeline-filter"><button class="filter-active" type="button" aria-pressed="true">All commits</button><button
-                type="button" aria-pressed="false">Drift only</button>
-            </div>
+            <div><span class="panel-kicker">Commit activity</span>
+              <h2>Health score by commit</h2>
+            </div><button class="outline-button" id="load-history-button" type="button">Load history</button>
           </div>
-          <div class="timeline-track">
-            <div class="track-line"></div>
-            <div class="timeline-commit healthy-commit" style="left: 8%">
-              <div class="commit-card"><span class="commit-number">COMMIT
-                  1</span><strong>Foundation</strong><small>Everything in place</small></div><span
-                class="commit-dot"></span><span class="timeline-state">Healthy</span>
-            </div>
-            <div class="timeline-commit healthy-commit" style="left: 36%">
-              <div class="commit-card"><span class="commit-number">COMMIT 10</span><strong>Scale
-                  up</strong><small>Services aligned</small></div><span class="commit-dot"></span><span
-                class="timeline-state">Healthy</span>
-            </div>
-            <div class="timeline-commit drift-commit" style="left: 64%">
-              <div class="commit-card"><span class="commit-number">COMMIT 20</span><strong>New checkout</strong><small>1
-                  boundary crossed</small></div><span class="commit-dot"></span><span class="timeline-state">Slight
-                drift</span>
-            </div>
-            <div class="timeline-commit degraded-commit" style="left: 92%">
-              <div class="commit-card"><span class="commit-number">COMMIT 30</span><strong>Current
-                  state</strong><small>2 paths to review</small></div><span class="commit-dot"></span><span
-                class="timeline-state">More drift</span>
-            </div>
-          </div>
-          <div class="timeline-caption"><span>Jun 04, 2026</span><span>Jul 02, 2026</span><span>Aug 14,
-              2026</span><span>Sep 22, 2026</span></div>
+          <p class="history-status empty-state" id="timeline-history-status" role="status" aria-live="polite">Load history to analyze health over time. This scan may take longer than a repository scan.</p>
+          <div class="history-chart-container full-history-chart" id="repository-timeline" aria-label="Repository health score history"></div>
+          <p class="timeline-caption" id="repository-timeline-caption"></p>
         </div>
       </section>
 
@@ -419,32 +317,8 @@
             <p>Small boundary issues, before they become architecture problems.</p>
           </div>
         </div>
-        <div class="violations-grid">
-          <article class="violation-card panel">
-            <div class="violation-top"><span class="critical-badge">△ DRIFT DETECTED</span><span class="mono muted">12m
-                ago</span></div>
-            <div class="dependency-visual">
-              <div class="dependency-box ui-box"><span>◇</span><strong>UI</strong><small>frontend</small></div>
-              <div class="broken-arrow"><span>✕</span><i></i></div>
-              <div class="dependency-box db-box"><span>▤</span><strong>DB</strong><small>database</small></div>
-            </div>
-            <h3>UI → DB</h3>
-            <p>UI code is reaching directly into the database layer. Route this through a service to keep business rules
-              in one place.</p>
-            <div class="violation-footer"><span>Service Violation</span><span class="rule-id">RULE-002</span></div>
-          </article>
-          <article class="violation-card panel">
-            <div class="violation-top"><span class="warning-badge">△ REVIEW</span><span class="mono muted">2h ago</span>
-            </div>
-            <div class="dependency-visual compact">
-              <div class="dependency-box service-box"><span>●</span><strong>Orders</strong><small>service</small></div>
-              <div class="soft-arrow"><i></i></div>
-              <div class="dependency-box service-box"><span>●</span><strong>Auth</strong><small>service</small></div>
-            </div>
-            <h3>Orders → Auth</h3>
-            <p>Order logic depends on an internal auth implementation. Consider a shared identity contract instead.</p>
-            <div class="violation-footer"><span>Boundary Crossed</span><span class="rule-id">RULE-014</span></div>
-          </article>
+        <div class="violations-grid" id="violation-cards">
+          <p class="empty-state">Run a scan to see cross-module imports. These are observations only; no architecture rules or drift history are configured.</p>
         </div>
       </section>
 
@@ -474,21 +348,22 @@
       <div class="scan-visual">
         <div class="scan-folder">▰<span class="scan-beam"></span></div>
       </div><span class="kicker">Repository scan</span>
-      <h2>Guardian is looking closer<span class="heading-accent">.</span></h2>
-      <p>Analyzing <strong>my-app</strong> by Team Quantum Forge against its intended architecture.</p>
+      <h2 id="scan-dialog-heading">Guardian is looking closer<span class="heading-accent">.</span></h2>
+      <p id="scan-dialog-description">Preparing a read-only scan of the selected public GitHub repository.</p>
+      <p class="scan-error" id="scan-error" role="alert" hidden></p>
       <div class="progress-track"><span id="progress-bar"></span></div>
       <div class="scan-progress"><span id="progress-label">Initializing scan</span><strong
           id="progress-percent">0%</strong></div>
       <div class="scan-checklist">
-        <div class="scan-step active" data-step="Analyzing structure"><span>1</span>Analyzing structure<i>○</i></div>
-        <div class="scan-step" data-step="Building architecture map"><span>2</span>Building architecture map<i>○</i>
-        </div>
-        <div class="scan-step" data-step="Checking dependencies"><span>3</span>Checking dependencies<i>○</i></div>
-        <div class="scan-step" data-step="Scanning for violations"><span>4</span>Scanning for violations<i>○</i></div>
-        <div class="scan-step" data-step="Generating insights"><span>5</span>Generating insights<i>○</i></div>
+        <div class="scan-step" data-step="Checking repository visibility"><span>1</span>Checking repository visibility<i>○</i></div>
+        <div class="scan-step" data-step="Cloning repository"><span>2</span>Cloning repository<i>○</i></div>
+        <div class="scan-step" data-step="Analyzing repository structure"><span>3</span>Analyzing repository structure<i>○</i></div>
+        <div class="scan-step" data-step="Building architecture map"><span>4</span>Building architecture map<i>○</i></div>
+        <div class="scan-step" data-step="Reading recent Git history"><span>5</span>Reading recent Git history<i>○</i></div>
       </div>
     </div>
   </div>
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 

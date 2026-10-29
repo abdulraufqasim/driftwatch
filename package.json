@@ -12,10 +12,12 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@babel/parser": "^7.29.11",
     "better-sqlite3": "^12.2.0",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
-    "express-session": "^1.18.2"
+    "express-session": "^1.18.2",
+    "yauzl": "^3.4.0"
   },
   "devDependencies": {
     "vite": "7.3.6"
