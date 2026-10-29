@@ -1,3 +1,7 @@
+.nav-count[hidden] {
+    display: none;
+}
+
 .search-row {
     display: flex;
     align-items: center;
@@ -1178,4 +1182,322 @@ button:disabled {
 .github-settings-message[hidden],
 .github-repo-empty[hidden] {
     display: none;
+}
+
+.language-chart {
+    display: grid;
+    gap: 12px;
+    padding: 8px 2px 2px;
+}
+
+.language-row-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+    color: var(--text);
+    font-size: 10px;
+}
+
+.language-row-label span {
+    color: var(--muted);
+    font: 9px var(--mono);
+}
+
+.language-bar-track {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: rgba(var(--accent-rgb), .09);
+}
+
+.language-bar {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+}
+
+.empty-state {
+    margin: 8px 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.repository-tree-entries .empty-state {
+    padding-left: 20px;
+}
+
+.repository-manifests {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px 0 0 21px;
+}
+
+.manifest-label {
+    width: 100%;
+    color: var(--muted);
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.manifest-chip {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 4px 6px;
+    border: 1px solid rgba(var(--accent-rgb), .2);
+    border-radius: 4px;
+    background: rgba(var(--accent-rgb), .06);
+    color: var(--muted);
+    font: 8px var(--mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.generated-map-content {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+}
+
+.generated-map-content > .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(330px, 80%);
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.generated-map-content .connections {
+    z-index: 1;
+    overflow: visible;
+}
+
+.generated-map-content .generated-node {
+    z-index: 2;
+    width: 174px;
+    min-width: 0;
+    transform: translate(-50%, -50%);
+}
+
+.generated-map-content .generated-node:hover {
+    transform: translate(-50%, -50%) scale(1.01);
+}
+
+.generated-node small {
+    overflow: hidden;
+    max-width: 122px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.repository-commit .commit-card {
+    border-color: rgba(var(--accent-rgb), .32);
+    background: rgba(var(--accent-rgb), .08);
+}
+
+.repository-commit .commit-card:after {
+    border-color: rgba(var(--accent-rgb), .32);
+}
+
+.repository-commit .commit-dot {
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.repository-commit .timeline-state {
+    color: var(--muted);
+}
+
+.timeline-empty {
+    position: absolute;
+    top: 44%;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+.scan-error[hidden] {
+    display: none;
+}
+
+.scan-error:not([hidden]) {
+    padding: 10px 12px;
+    border: 1px solid rgba(239, 68, 68, .32);
+    border-radius: 6px;
+    background: rgba(239, 68, 68, .08);
+    color: #ff9a9a;
+}
+
+[data-theme="light"] .repository-commit .commit-card {
+    background: rgba(var(--accent-rgb), .06);
+}
+
+.dashboard-repo-form {
+    max-width: 860px;
+    margin: -4px 0 22px;
+}
+
+.dashboard-repo-form .repo-input-wrap {
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+}
+
+.dashboard-repo-form .repo-input-wrap input {
+    flex: 1 1 240px;
+    width: auto;
+    min-width: 180px;
+}
+
+.dashboard-repo-form .onboarding-scan-button {
+    width: auto;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 18px;
+}
+
+.dashboard-repo-form .outline-button {
+    flex: 0 0 auto;
+    padding: 9px 14px;
+}
+
+.dashboard-repo-form .github-message {
+    margin: 8px 0 0;
+}
+
+.layer-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 20px 12px;
+}
+
+.layer-breakdown .layer-chip {
+    margin-left: 0;
+}
+
+.layer-chip.service {
+    color: #64d7ae;
+    background: rgba(16, 185, 129, .12);
+}
+
+.layer-chip.shared {
+    color: var(--muted);
+    background: rgba(124, 135, 156, .14);
+}
+
+.map-layer-title {
+    position: absolute;
+    top: 24px;
+    z-index: 2;
+    width: 174px;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font: 9px var(--mono);
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.history-status {
+    margin: 8px 0;
+}
+
+.history-status.is-error {
+    color: #ff9a9a;
+}
+
+.history-chart-container {
+    min-height: 54px;
+    width: 100%;
+}
+
+.history-chart-container.full-history-chart {
+    min-height: 270px;
+    margin-top: 16px;
+}
+
+.health-history-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.history-grid-line {
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.history-axis-label {
+    fill: var(--muted);
+    font: 10px var(--mono);
+}
+
+.history-score-line {
+    fill: none;
+    stroke: var(--accent-bright);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.history-point {
+    fill: var(--accent-bright);
+    stroke: var(--panel);
+    stroke-width: 2;
+}
+
+.history-point-drift {
+    fill: var(--red);
+}
+
+.history-drift-marker {
+    stroke: var(--red);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+}
+
+.history-drift-label {
+    fill: var(--red);
+    font: 10px var(--mono);
+}
+
+.timeline-caption {
+    display: block;
+    margin: 8px 0 0;
+}
+
+.architecture-canvas {
+    overflow: auto;
+}
+
+.generated-map-content {
+    position: relative;
+    inset: auto;
+    min-width: 900px;
+}
+
+.generated-map-content .connections path.violation-edge {
+    stroke: var(--red);
+    stroke-width: 2.5;
+    opacity: 1;
+}
+
+@media (max-width: 700px) {
+    .dashboard-repo-form .repo-input-wrap {
+        flex-wrap: wrap;
+    }
+
+    .dashboard-repo-form .repo-input-wrap input {
+        flex-basis: calc(100% - 32px);
+    }
+
+    .history-chart-container.full-history-chart {
+        min-height: 190px;
+    }
 }

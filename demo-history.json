@@ -1,0 +1,112 @@
+{
+  "repo": "demo-repo",
+  "branch": "main",
+  "points": [
+    {
+      "sha": "a31f02d7a80e5c4b9126c8d3017f5ea2b4c68019",
+      "message": "Create initial project structure",
+      "author": "Alex Morgan",
+      "date": "2026-03-04T10:12:00Z",
+      "healthScore": 100,
+      "fileCount": 4,
+      "critical": 0,
+      "warnings": 0
+    },
+    {
+      "sha": "b42e13e8b91f6d5ca237d9e4128a6fb3c5d79120",
+      "message": "Add shared application types",
+      "author": "Jamie Chen",
+      "date": "2026-03-10T14:35:00Z",
+      "healthScore": 100,
+      "fileCount": 5,
+      "critical": 0,
+      "warnings": 0
+    },
+    {
+      "sha": "c53f24f9ca207e6db348eaf5239b70c4d6e8a231",
+      "message": "Add backend user controller",
+      "author": "Alex Morgan",
+      "date": "2026-03-18T09:05:00Z",
+      "healthScore": 100,
+      "fileCount": 6,
+      "critical": 0,
+      "warnings": 0
+    },
+    {
+      "sha": "d640350adb318f7ec459fb0634ac81d5e7f9b342",
+      "message": "Add database user model",
+      "author": "Jamie Chen",
+      "date": "2026-03-27T16:20:00Z",
+      "healthScore": 100,
+      "fileCount": 7,
+      "critical": 0,
+      "warnings": 0
+    },
+    {
+      "sha": "e751461bec42908fd56a0c1745bd92e6f80ac453",
+      "message": "Connect the frontend to user data",
+      "author": "Alex Morgan",
+      "date": "2026-04-03T11:42:00Z",
+      "healthScore": 97,
+      "fileCount": 7,
+      "critical": 0,
+      "warnings": 1
+    },
+    {
+      "sha": "f862572cfd53a190e67b1d2856cea3f7091bd564",
+      "message": "Add report rendering service",
+      "author": "Jamie Chen",
+      "date": "2026-04-12T13:18:00Z",
+      "healthScore": 97,
+      "fileCount": 8,
+      "critical": 0,
+      "warnings": 1
+    },
+    {
+      "sha": "0973683d0e64b2a1f78c2e3967dfb4081a2ce675",
+      "message": "Render chart directly from UI data access",
+      "author": "Alex Morgan",
+      "date": "2026-04-21T08:54:00Z",
+      "healthScore": 90,
+      "fileCount": 8,
+      "critical": 1,
+      "warnings": 1
+    },
+    {
+      "sha": "1a84794e1f75c3b2089d3f4a78e0c5192b3df786",
+      "message": "Split chart into a frontend component",
+      "author": "Jamie Chen",
+      "date": "2026-04-29T15:07:00Z",
+      "healthScore": 90,
+      "fileCount": 8,
+      "critical": 1,
+      "warnings": 1
+    },
+    {
+      "sha": "2b958a5f2086d4c319ae405b89f1d62a3c4e0897",
+      "message": "Add a report helper in services",
+      "author": "Alex Morgan",
+      "date": "2026-05-08T10:31:00Z",
+      "healthScore": 87,
+      "fileCount": 8,
+      "critical": 1,
+      "warnings": 1
+    },
+    {
+      "sha": "3ca96b603197e5d42abf516c90a2e73b4d5f19a8",
+      "message": "Tidy demo application entry point",
+      "author": "Jamie Chen",
+      "date": "2026-05-16T17:26:00Z",
+      "healthScore": 87,
+      "fileCount": 8,
+      "critical": 1,
+      "warnings": 1
+    }
+  ],
+  "firstDriftCommit": {
+    "sha": "e751461bec42908fd56a0c1745bd92e6f80ac453",
+    "message": "Connect the frontend to user data",
+    "scoreDrop": 3
+  },
+  "skipped": []
+}

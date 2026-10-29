@@ -1,0 +1,1 @@
+window.DRIFTWATCH_API_BASE = window.DRIFTWATCH_API_BASE || '';

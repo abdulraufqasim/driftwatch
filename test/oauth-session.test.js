@@ -70,6 +70,35 @@ test('GitHub OAuth session persists across restarts and rejects invalid requests
   const initialStatus = await fetch(`${baseUrl}/api/github/status`).then((response) => response.json());
   assert.equal(initialStatus.connected, false);
 
+  const demoScanResponse = await fetch(`${baseUrl}/api/scan`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ demo: true })
+  });
+  assert.equal(demoScanResponse.status, 200);
+  const demoScan = await demoScanResponse.json();
+  assert.equal(demoScan.healthScore, 87);
+  assert.deepEqual(demoScan.summary, { healthy: 4, warnings: 1, critical: 1 });
+  assert.deepEqual(demoScan.violations.map(({ ruleId }) => ruleId), ['RULE-001', 'RULE-004']);
+
+  const demoHistoryResponse = await fetch(`${baseUrl}/api/history`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ demo: true })
+  });
+  assert.equal(demoHistoryResponse.status, 200);
+  const demoHistory = await demoHistoryResponse.json();
+  assert.equal(demoHistory.repo, 'demo-repo');
+  assert.equal(demoHistory.points.length, 10);
+  assert.equal(demoHistory.points.at(-1).healthScore, 87);
+
+  const invalidPublicScanResponse = await fetch(`${baseUrl}/api/scan`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url: 'https://example.com/owner/repo' })
+  });
+  assert.equal(invalidPublicScanResponse.status, 400);
+
   const connectResponse = await fetch(`${baseUrl}/api/github/connect`);
   assert.equal(connectResponse.status, 200);
   const cookieHeader = connectResponse.headers.get('set-cookie');
@@ -125,8 +154,8 @@ test('GitHub sign-in reports when OAuth App credentials are missing', async (t) 
     SESSION_DB_PATH: path.join(temporaryDirectory, 'sessions.sqlite'),
     NODE_ENV: 'test'
   };
-  delete environment.GITHUB_CLIENT_ID;
-  delete environment.GITHUB_CLIENT_SECRET;
+  environment.GITHUB_CLIENT_ID = '';
+  environment.GITHUB_CLIENT_SECRET = '';
   const child = await startServer(environment);
   t.after(async () => {
     await stopServer(child);
@@ -137,4 +166,54 @@ test('GitHub sign-in reports when OAuth App credentials are missing', async (t) 
   assert.equal(response.status, 503);
   const body = await response.json();
   assert.match(body.error, /not configured/i);
+});
+
+test('CORS accepts configured origins, blocks other origins, and allows tokenless demo scans', async (t) => {
+  const port = await availablePort();
+  const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), 'driftwatch-cors-test-'));
+  const allowedOrigin = 'https://driftwatch-frontend.example';
+  const environment = {
+    ...process.env,
+    PORT: String(port),
+    APP_BASE_URL: `http://127.0.0.1:${port}`,
+    SESSION_SECRET: crypto.randomBytes(32).toString('hex'),
+    TOKEN_ENCRYPTION_KEY: crypto.randomBytes(32).toString('hex'),
+    SESSION_DB_PATH: path.join(temporaryDirectory, 'nested', 'sessions.sqlite'),
+    ALLOWED_ORIGINS: ` ${allowedOrigin}, https://preview.example `,
+    GITHUB_TOKEN: '',
+    NODE_ENV: 'test'
+  };
+  const child = await startServer(environment);
+  t.after(async () => {
+    await stopServer(child);
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  });
+
+  const baseUrl = environment.APP_BASE_URL;
+  const preflight = await fetch(`${baseUrl}/api/scan`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: allowedOrigin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type'
+    }
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), allowedOrigin);
+  assert.match(preflight.headers.get('access-control-allow-methods'), /POST/);
+
+  const demoResponse = await fetch(`${baseUrl}/api/scan`, {
+    method: 'POST',
+    headers: { Origin: allowedOrigin, 'content-type': 'application/json' },
+    body: JSON.stringify({ demo: true })
+  });
+  assert.equal(demoResponse.status, 200);
+  assert.equal(demoResponse.headers.get('access-control-allow-origin'), allowedOrigin);
+  assert.equal((await demoResponse.json()).healthScore, 87);
+
+  const blockedResponse = await fetch(`${baseUrl}/api/health`, {
+    headers: { Origin: 'https://unlisted.example' }
+  });
+  assert.equal(blockedResponse.status, 403);
+  assert.equal(blockedResponse.headers.get('access-control-allow-origin'), null);
 });
