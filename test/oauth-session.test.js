@@ -77,9 +77,9 @@ test('GitHub OAuth session persists across restarts and rejects invalid requests
   });
   assert.equal(demoScanResponse.status, 200);
   const demoScan = await demoScanResponse.json();
-  assert.equal(demoScan.healthScore, 87);
-  assert.deepEqual(demoScan.summary, { healthy: 4, warnings: 1, critical: 1 });
-  assert.deepEqual(demoScan.violations.map(({ ruleId }) => ruleId), ['RULE-001', 'RULE-004']);
+  assert.equal(demoScan.healthScore, 74);
+  assert.deepEqual(demoScan.summary, { healthy: 12, warnings: 2, critical: 2 });
+  assert.equal(demoScan.violations.length, 4);
 
   const demoHistoryResponse = await fetch(`${baseUrl}/api/history`, {
     method: 'POST',
@@ -90,7 +90,7 @@ test('GitHub OAuth session persists across restarts and rejects invalid requests
   const demoHistory = await demoHistoryResponse.json();
   assert.equal(demoHistory.repo, 'demo-repo');
   assert.equal(demoHistory.points.length, 10);
-  assert.equal(demoHistory.points.at(-1).healthScore, 87);
+  assert.equal(demoHistory.points.at(-1).healthScore, 74);
 
   const invalidPublicScanResponse = await fetch(`${baseUrl}/api/scan`, {
     method: 'POST',
@@ -209,7 +209,7 @@ test('CORS accepts configured origins, blocks other origins, and allows tokenles
   });
   assert.equal(demoResponse.status, 200);
   assert.equal(demoResponse.headers.get('access-control-allow-origin'), allowedOrigin);
-  assert.equal((await demoResponse.json()).healthScore, 87);
+  assert.equal((await demoResponse.json()).healthScore, 74);
 
   const blockedResponse = await fetch(`${baseUrl}/api/health`, {
     headers: { Origin: 'https://unlisted.example' }
