@@ -12,7 +12,13 @@
    - `APP_BASE_URL`
    - `ALLOWED_ORIGINS`
    - `SESSION_DB_PATH`
+   - `AI_PROVIDER`
+   - `AI_API_KEY`
+   - `AI_MODEL`
+   - `AI_DAILY_LIMIT`
 5. Deploy the service and copy its public service URL for the frontend configuration.
+
+Dr. Drift requires an AI provider name (`anthropic`, `openai`, or `gemini`) and its API key. `AI_MODEL` and `AI_DAILY_LIMIT` are optional; the daily cap defaults to 500 requests.
 
 ## Vercel frontend
 
