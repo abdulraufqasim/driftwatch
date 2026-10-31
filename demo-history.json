@@ -4,109 +4,109 @@
   "points": [
     {
       "sha": "a31f02d7a80e5c4b9126c8d3017f5ea2b4c68019",
-      "message": "Create initial project structure",
+      "message": "Create the initial workspace and shared types",
       "author": "Alex Morgan",
-      "date": "2026-03-04T10:12:00Z",
-      "healthScore": 100,
-      "fileCount": 4,
-      "critical": 0,
-      "warnings": 0
-    },
-    {
-      "sha": "b42e13e8b91f6d5ca237d9e4128a6fb3c5d79120",
-      "message": "Add shared application types",
-      "author": "Jamie Chen",
-      "date": "2026-03-10T14:35:00Z",
-      "healthScore": 100,
-      "fileCount": 5,
-      "critical": 0,
-      "warnings": 0
-    },
-    {
-      "sha": "c53f24f9ca207e6db348eaf5239b70c4d6e8a231",
-      "message": "Add backend user controller",
-      "author": "Alex Morgan",
-      "date": "2026-03-18T09:05:00Z",
+      "date": "2026-09-10T10:12:00Z",
       "healthScore": 100,
       "fileCount": 6,
       "critical": 0,
       "warnings": 0
     },
     {
-      "sha": "d640350adb318f7ec459fb0634ac81d5e7f9b342",
-      "message": "Add database user model",
+      "sha": "b42e13e8b91f6d5ca237d9e4128a6fb3c5d79120",
+      "message": "Add the dashboard and chart components",
       "author": "Jamie Chen",
-      "date": "2026-03-27T16:20:00Z",
+      "date": "2026-09-14T14:35:00Z",
       "healthScore": 100,
-      "fileCount": 7,
+      "fileCount": 8,
       "critical": 0,
       "warnings": 0
     },
     {
-      "sha": "e751461bec42908fd56a0c1745bd92e6f80ac453",
-      "message": "Connect the frontend to user data",
+      "sha": "c53f24f9ca207e6db348eaf5239b70c4d6e8a231",
+      "message": "Add repository and health routes",
       "author": "Alex Morgan",
-      "date": "2026-04-03T11:42:00Z",
-      "healthScore": 97,
-      "fileCount": 7,
+      "date": "2026-09-19T09:05:00Z",
+      "healthScore": 100,
+      "fileCount": 11,
       "critical": 0,
-      "warnings": 1
+      "warnings": 0
+    },
+    {
+      "sha": "d640350adb318f7ec459fb0634ac81d5e7f9b342",
+      "message": "Connect the frontend to user data",
+      "author": "Jamie Chen",
+      "date": "2026-09-23T16:20:00Z",
+      "healthScore": 90,
+      "fileCount": 12,
+      "critical": 1,
+      "warnings": 0
+    },
+    {
+      "sha": "e751461bec42908fd56a0c1745bd92e6f80ac453",
+      "message": "Add project models and service helpers",
+      "author": "Alex Morgan",
+      "date": "2026-09-28T11:42:00Z",
+      "healthScore": 90,
+      "fileCount": 15,
+      "critical": 1,
+      "warnings": 0
     },
     {
       "sha": "f862572cfd53a190e67b1d2856cea3f7091bd564",
-      "message": "Add report rendering service",
+      "message": "Record health checks from the data layer",
       "author": "Jamie Chen",
-      "date": "2026-04-12T13:18:00Z",
-      "healthScore": 97,
-      "fileCount": 8,
-      "critical": 0,
-      "warnings": 1
+      "date": "2026-10-02T13:18:00Z",
+      "healthScore": 80,
+      "fileCount": 16,
+      "critical": 2,
+      "warnings": 0
     },
     {
       "sha": "0973683d0e64b2a1f78c2e3967dfb4081a2ce675",
-      "message": "Render chart directly from UI data access",
+      "message": "Render charts in generated reports",
       "author": "Alex Morgan",
-      "date": "2026-04-21T08:54:00Z",
-      "healthScore": 90,
-      "fileCount": 8,
-      "critical": 1,
+      "date": "2026-10-08T08:54:00Z",
+      "healthScore": 77,
+      "fileCount": 17,
+      "critical": 2,
       "warnings": 1
     },
     {
       "sha": "1a84794e1f75c3b2089d3f4a78e0c5192b3df786",
-      "message": "Split chart into a frontend component",
+      "message": "Add score notifications to the service layer",
       "author": "Jamie Chen",
-      "date": "2026-04-29T15:07:00Z",
-      "healthScore": 90,
-      "fileCount": 8,
-      "critical": 1,
-      "warnings": 1
+      "date": "2026-10-13T15:07:00Z",
+      "healthScore": 74,
+      "fileCount": 18,
+      "critical": 2,
+      "warnings": 2
     },
     {
       "sha": "2b958a5f2086d4c319ae405b89f1d62a3c4e0897",
-      "message": "Add a report helper in services",
+      "message": "Document architecture rules and scan limits",
       "author": "Alex Morgan",
-      "date": "2026-05-08T10:31:00Z",
-      "healthScore": 87,
-      "fileCount": 8,
-      "critical": 1,
-      "warnings": 1
+      "date": "2026-10-19T10:31:00Z",
+      "healthScore": 74,
+      "fileCount": 20,
+      "critical": 2,
+      "warnings": 2
     },
     {
       "sha": "3ca96b603197e5d42abf516c90a2e73b4d5f19a8",
-      "message": "Tidy demo application entry point",
+      "message": "Polish the demo workspace and history view",
       "author": "Jamie Chen",
-      "date": "2026-05-16T17:26:00Z",
-      "healthScore": 87,
-      "fileCount": 8,
-      "critical": 1,
-      "warnings": 1
+      "date": "2026-10-28T17:26:00Z",
+      "healthScore": 74,
+      "fileCount": 20,
+      "critical": 2,
+      "warnings": 2
     }
   ],
   "firstDriftCommit": {
-    "sha": "e751461bec42908fd56a0c1745bd92e6f80ac453",
+    "sha": "d640350adb318f7ec459fb0634ac81d5e7f9b342",
     "message": "Connect the frontend to user data",
-    "scoreDrop": 3
+    "scoreDrop": 10
   },
   "skipped": []
 }

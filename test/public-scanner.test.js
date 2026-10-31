@@ -87,14 +87,31 @@ test('uses the shared layer priorities for nested files', () => {
 test('scans the local demo with the shared Phase 2 rules', async () => {
   const result = await scanDemoRepository();
   assert.equal(result.repo, 'demo-repo');
-  assert.equal(result.fileCount, 8);
-  assert.equal(result.healthScore, 87);
-  assert.deepEqual(result.summary, { healthy: 4, warnings: 1, critical: 1 });
+  assert.equal(result.fileCount, 20);
+  assert.equal(result.healthScore, 74);
+  assert.deepEqual(result.summary, { healthy: 12, warnings: 2, critical: 2 });
+  assert.equal(result.violations.length, 4);
   assert.deepEqual(
-    result.violations.map(({ ruleId, severity }) => ({ ruleId, severity })),
+    result.violations.reduce((counts, { severity }) => {
+      counts[severity] = (counts[severity] || 0) + 1;
+      return counts;
+    }, {}),
+    { critical: 2, warning: 2 }
+  );
+  assert.deepEqual(
+    result.violations.filter(({ severity }) => severity === 'critical')
+      .map(({ fromFile, toFile }) => [fromFile, toFile]).sort(),
     [
-      { ruleId: 'RULE-001', severity: 'critical' },
-      { ruleId: 'RULE-004', severity: 'warning' }
+      ['database/models/audit.js', 'backend/routes/health.js'],
+      ['frontend/app.js', 'database/models/user.js']
+    ]
+  );
+  assert.deepEqual(
+    result.violations.filter(({ severity }) => severity === 'warning')
+      .map(({ fromFile, toFile }) => [fromFile, toFile]).sort(),
+    [
+      ['services/notifications.js', 'frontend/components/score.js'],
+      ['services/report.js', 'frontend/components/chart.js']
     ]
   );
 });
@@ -115,7 +132,7 @@ test('finds the first score drop compared with the previous timeline point', () 
     { sha: 'a', message: 'baseline', healthScore: 100 },
     { sha: 'b', message: 'no change', healthScore: 100 },
     { sha: 'c', message: 'first regression', healthScore: 97 },
-    { sha: 'd', message: 'later regression', healthScore: 87 }
+    { sha: 'd', message: 'later regression', healthScore: 74 }
   ];
   assert.deepEqual(findFirstDriftCommit(points), {
     sha: 'c',
@@ -130,10 +147,10 @@ test('returns the bundled offline demo history', async () => {
   assert.equal(history.repo, 'demo-repo');
   assert.equal(history.points.length, 10);
   assert.equal(history.points[0].healthScore, 100);
-  assert.equal(history.points.at(-1).healthScore, 87);
+  assert.equal(history.points.at(-1).healthScore, 74);
   assert.deepEqual(history.firstDriftCommit, {
-    sha: 'e751461bec42908fd56a0c1745bd92e6f80ac453',
+    sha: 'd640350adb318f7ec459fb0634ac81d5e7f9b342',
     message: 'Connect the frontend to user data',
-    scoreDrop: 3
+    scoreDrop: 10
   });
 });

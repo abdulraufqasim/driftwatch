@@ -41,6 +41,7 @@ let activeScanCount = 0;
 let activePublicScanCount = 0;
 const PUBLIC_ASSETS = new Set([
   'app.js',
+  'csv.js',
   'config.js',
   'drift-icon.png',
   'drift-icon@2x.png',

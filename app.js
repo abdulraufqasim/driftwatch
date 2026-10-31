@@ -44,11 +44,13 @@ const sidebarToggle = document.getElementById('sidebar-toggle');
 const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
 const mobileSidebarQuery = window.matchMedia('(max-width: 700px)');
 const panelMenuToggles = [...document.querySelectorAll('.more-button')];
+const exportCsvButton = document.getElementById('export-csv');
 let mapZoom = 100;
 let isSidebarOpen = !mobileSidebarQuery.matches;
 let githubRepositories = [];
 let selectedRepository = null;
 let currentScan = null;
+let currentScanDate = '';
 let currentScanUrl = '';
 let currentIsDemo = false;
 let currentHistory = null;
@@ -269,11 +271,13 @@ async function runPublicScan({ demo = false, url = '' } = {}) {
   try {
     const scan = await postPublicJson('/api/scan', demo ? { demo: true } : { url: scanUrl });
     currentScan = scan;
+    currentScanDate = new Date().toISOString();
     currentScanUrl = demo ? '' : scanUrl;
     currentIsDemo = demo;
     currentHistory = null;
     resetHistoryDisplay();
     applyPublicScan(scan);
+    exportCsvButton.hidden = false;
     onboarding.classList.remove('visible');
     appShell.classList.add('ready');
     window.localStorage.setItem('driftwatch-onboarded', 'true');
@@ -583,7 +587,7 @@ function applyPublicScan(scan) {
   const repositoryName = scan.repo;
   const repositoryShortName = repositoryName.split('/').pop();
   const repositoryOwner = repositoryName.includes('/') ? repositoryName.split('/')[0] : 'Demo';
-  const scannedAt = new Date();
+  const scannedAt = new Date(currentScanDate || Date.now());
   document.getElementById('repository-name').textContent = repositoryName;
   document.getElementById('workspace-name').textContent = repositoryShortName;
   document.getElementById('workspace-avatar').textContent = repositoryShortName.slice(0, 1).toUpperCase();
@@ -1250,6 +1254,44 @@ document.querySelectorAll('[data-action="export-report"]').forEach((button) => b
   showToast('Report exported successfully.');
 }));
 
+exportCsvButton.addEventListener('click', () => {
+  if (!currentScan || !Array.isArray(currentScan.violations)) {
+    showToast('Scan a repository before exporting violations.');
+    return;
+  }
+  const headers = [
+    'repo', 'branch', 'health score', 'scan date',
+    'rule id', 'severity', 'from file', 'to file', 'from layer', 'to layer', 'message'
+  ];
+  const metadata = [currentScan.repo, currentScan.branch, currentScan.healthScore, currentScanDate];
+  const violations = currentScan.violations.length
+    ? currentScan.violations.map((violation) => [
+      violation.ruleId,
+      violation.severity,
+      violation.fromFile,
+      violation.toFile,
+      violation.fromLayer,
+      violation.toLayer,
+      violation.message
+    ])
+    : [[ '', '', '', '', '', '', '' ]];
+  const csv = window.DriftwatchCsv.rowsToCsv([
+    headers,
+    ...violations.map((violation) => [...metadata, ...violation])
+  ]);
+  const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  const safeRepo = currentScan.repo.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').replace(/[. ]+$/g, '') || 'repository';
+  const date = (currentScanDate || new Date().toISOString()).slice(0, 10);
+  link.href = blobUrl;
+  link.download = `driftwatch-${safeRepo}-${date}.csv`;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+});
+
 document.querySelectorAll('.toggle-input').forEach((input) => {
   input.addEventListener('change', () => showToast(`${input.closest('.setting-row').querySelector('strong').textContent} ${input.checked ? 'enabled' : 'disabled'}.`));
 });
@@ -1262,9 +1304,11 @@ document.getElementById('reset-onboarding').addEventListener('click', () => {
   dashboardRepoUrlInput.value = '';
   setRepositorySelection(null);
   currentScan = null;
+  currentScanDate = '';
   currentScanUrl = '';
   currentIsDemo = false;
   currentHistory = null;
+  exportCsvButton.hidden = true;
   showToast('First-time setup is ready.');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
