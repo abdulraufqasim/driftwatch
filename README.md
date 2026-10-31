@@ -18,6 +18,7 @@ Open `http://localhost:3000`. Copy `.env.example` to `.env` and set `SESSION_SEC
 - `GET /api/health` — service health.
 - `POST /api/scan` — analyze a public GitHub repository: `{"url":"https://github.com/owner/repository"}`.
 - `POST /api/history` — scan health across sampled commits: `{"url":"https://github.com/owner/repository","limit":10}`.
+- `POST /api/chat` — ask Dr. Drift about a current scan; configure `AI_PROVIDER` and `AI_API_KEY` to enable it.
 - Demo mode is available on either scan endpoint with `{"demo":true}` and requires no GitHub token.
 
 ## Default architecture rules
@@ -37,7 +38,7 @@ Deploy the frontend on Vercel and the Node API on Render. See [DEPLOY.md](./DEPL
 
 ## Privacy and security
 
-Driftwatch reads only public repositories. It downloads repository code to a temporary directory for scanning and deletes that directory after each scan. It stores no source code. The optional `GITHUB_TOKEN` is read from an environment variable and is not included in scan results. When a user connects a GitHub account, its OAuth access token is encrypted and stored in that user's server-side SQLite session.
+Driftwatch reads only public repositories. It downloads repository code to a temporary directory for scanning and deletes that directory after each scan. It stores no source code. The optional `GITHUB_TOKEN` is read from an environment variable and is not included in scan results. When a user connects a GitHub account, its OAuth access token is encrypted and stored in that user's server-side SQLite session. When Dr. Drift is used, the question and a reduced summary of the current scan are sent to the configured AI provider; chat messages remain in browser memory only.
 
 ## Roadmap
 

@@ -10,6 +10,8 @@ const express = require('express');
 const session = require('express-session');
 const Database = require('better-sqlite3');
 const { analyzeRepository, readRecentCommits } = require('./scanner');
+const { callAiProvider, isProviderConfigured } = require('./ai-provider');
+const { createChatHandler } = require('./chat-service');
 const {
   PublicScanError,
   scanDemoRepository,
@@ -36,11 +38,16 @@ const MAX_REPOSITORY_SIZE_KB = 204800;
 const MAX_ACTIVE_SCANS = 2;
 const MAX_ACTIVE_PUBLIC_SCANS = 2;
 const SCAN_JOB_MAX_AGE = 30 * 60 * 1000;
+const configuredAiDailyLimit = (process.env.AI_DAILY_LIMIT || '').trim();
+const AI_DAILY_LIMIT = configuredAiDailyLimit ? Number(configuredAiDailyLimit) : 500;
 const scanJobs = new Map();
 let activeScanCount = 0;
 let activePublicScanCount = 0;
 const PUBLIC_ASSETS = new Set([
   'app.js',
+  'assets/dr-drift.png',
+  'assets/dr-drift-avatar-64.png',
+  'assets/dr-drift-avatar-128.png',
   'csv.js',
   'config.js',
   'drift-icon.png',
@@ -56,6 +63,9 @@ const PUBLIC_ASSETS = new Set([
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error('PORT must be a valid TCP port.');
+}
+if (!Number.isSafeInteger(AI_DAILY_LIMIT) || AI_DAILY_LIMIT < 1) {
+  throw new Error('AI_DAILY_LIMIT must be a positive whole number.');
 }
 if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
   throw new Error('Set SESSION_SECRET to a random value of at least 32 characters.');
@@ -260,6 +270,11 @@ function regenerateSession(req) {
 }
 
 const app = express();
+const handleChat = createChatHandler({
+  provider: callAiProvider,
+  isAvailable: isProviderConfigured,
+  dailyLimit: AI_DAILY_LIMIT
+});
 app.disable('x-powered-by');
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.use((req, res, next) => {
@@ -304,6 +319,7 @@ app.use(session({
     maxAge: SESSION_MAX_AGE
   }
 }));
+app.use('/api/chat', express.json({ limit: '110kb', strict: true }));
 app.use(express.json({ limit: '16kb', strict: true }));
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/auth/')
@@ -907,6 +923,25 @@ app.post('/api/history', async (req, res) => {
   }
 });
 
+app.post('/api/chat', async (req, res) => {
+  const startedAt = Date.now();
+  res.once('finish', () => {
+    console.info(JSON.stringify({
+      event: 'dr_drift_chat',
+      status: res.statusCode,
+      durationMs: Date.now() - startedAt,
+      requestBytes: Buffer.byteLength(JSON.stringify(req.body || {}), 'utf8'),
+      responseBytes: Number(res.getHeader('content-length') || 0)
+    }));
+  });
+
+  const result = await handleChat({
+    body: req.body,
+    visitorKey: req.ip || req.socket.remoteAddress || 'unknown'
+  });
+  res.status(result.status).json(result.body);
+});
+
 app.get('/api/scans/latest', (req, res) => {
   res.json(req.session.latestScan || null);
 });
@@ -952,14 +987,18 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  if (req.path !== '/api/scan') {
+  if (req.path !== '/api/scan' && req.path !== '/api/chat') {
     next(error);
     return;
   }
   const status = error.status === 413 ? 413 : 400;
-  const message = status === 413
-    ? 'The request body is too large.'
-    : 'The scan request must contain valid JSON.';
+  const message = req.path === '/api/chat'
+    ? status === 413
+      ? 'The chat request is too large.'
+      : 'The chat request must contain valid JSON.'
+    : status === 413
+      ? 'The request body is too large.'
+      : 'The scan request must contain valid JSON.';
   res.status(status).json({ error: message, code: status === 413 ? 'request_too_large' : 'invalid_json' });
 });
 

@@ -48,6 +48,24 @@ const sidebarBackdrop = document.querySelector('.sidebar-backdrop');
 const mobileSidebarQuery = window.matchMedia('(max-width: 700px)');
 const panelMenuToggles = [...document.querySelectorAll('.more-button')];
 const exportCsvButton = document.getElementById('export-csv');
+const driftChatTrigger = document.getElementById('drift-chat-trigger');
+const driftChatPanel = document.getElementById('drift-chat-panel');
+const driftChatCloseButton = document.getElementById('drift-chat-close');
+const driftChatClearButton = document.getElementById('drift-chat-clear');
+const driftChatVoiceToggle = document.getElementById('drift-chat-voice-toggle');
+const driftChatStopSpeakingButton = document.getElementById('drift-chat-stop-speaking');
+const driftChatSuggestions = document.getElementById('drift-chat-suggestions');
+const driftChatMessages = document.getElementById('drift-chat-messages');
+const driftChatStatus = document.getElementById('drift-chat-status');
+const driftChatForm = document.getElementById('drift-chat-form');
+const driftChatInput = document.getElementById('drift-chat-input');
+const driftChatSendButton = document.getElementById('drift-chat-send');
+const driftChatMicButton = document.getElementById('drift-chat-mic');
+const driftChatCancelVoiceButton = document.getElementById('drift-chat-cancel-voice');
+const driftChatLanguage = document.getElementById('drift-chat-language');
+const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+const supportsSpeechSynthesis = 'speechSynthesis' in window
+  && typeof window.SpeechSynthesisUtterance === 'function';
 let mapZoom = 100;
 let isSidebarOpen = !mobileSidebarQuery.matches;
 let githubRepositories = [];
@@ -59,6 +77,14 @@ let currentIsDemo = false;
 let currentHistory = null;
 let activeScanRun = null;
 let retryScanOptions = null;
+let chatBusy = false;
+let chatGeneration = 0;
+let chatRequestController = null;
+let activeRecognition = null;
+let voiceTranscript = '';
+let voiceRecognitionError = '';
+let voiceOutputEnabled = window.localStorage.getItem('driftwatch-dr-drift-voice') === 'true';
+let currentUtterance = null;
 const API_BASE_URL = (window.DRIFTWATCH_API_BASE || '').replace(/\/+$/, '');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -83,6 +109,10 @@ sidebarToggle.addEventListener('click', () => setSidebarOpen(!isSidebarOpen));
 sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 mobileSidebarQuery.addEventListener('change', (event) => setSidebarOpen(!event.matches));
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !driftChatPanel.hidden) {
+    closeDriftChat(true);
+    return;
+  }
   if (event.key === 'Escape' && isSidebarOpen && mobileSidebarQuery.matches) {
     setSidebarOpen(false);
     sidebarToggle.focus();
@@ -436,6 +466,7 @@ async function runPublicScan({ demo = false, url = '' } = {}) {
     currentHistory = null;
     resetHistoryDisplay();
     applyPublicScan(scan);
+    updateDriftChatWelcome();
     exportCsvButton.hidden = false;
     onboarding.classList.remove('visible');
     appShell.classList.add('ready');
@@ -572,6 +603,336 @@ function createElement(tag, className, text) {
   if (text !== undefined) element.textContent = text;
   return element;
 }
+
+function updateDriftChatControls() {
+  const hasScan = Boolean(currentScan);
+  driftChatInput.disabled = !hasScan || chatBusy;
+  driftChatSendButton.disabled = !hasScan || chatBusy || Boolean(activeRecognition)
+    || !driftChatInput.value.trim();
+  driftChatMicButton.hidden = !SpeechRecognitionApi;
+  driftChatMicButton.disabled = !hasScan || chatBusy || Boolean(activeRecognition);
+  driftChatCancelVoiceButton.hidden = !activeRecognition;
+  driftChatVoiceToggle.disabled = !supportsSpeechSynthesis;
+  driftChatSuggestions.querySelectorAll('button').forEach((button) => {
+    button.disabled = chatBusy || Boolean(activeRecognition);
+  });
+}
+
+function setDriftChatStatus(message, isError = false) {
+  driftChatStatus.textContent = message;
+  driftChatStatus.classList.toggle('is-error', isError);
+}
+
+function appendDriftChatMessage(role, text, isError = false) {
+  const message = createElement('div', `drift-chat-message ${role}${isError ? ' is-error' : ''}`, text);
+  driftChatMessages.append(message);
+  driftChatMessages.scrollTop = driftChatMessages.scrollHeight;
+  return message;
+}
+
+function showDriftChatTyping() {
+  const typing = document.createElement('div');
+  typing.className = 'drift-chat-message drift-chat-typing';
+  typing.setAttribute('role', 'status');
+  typing.setAttribute('aria-label', 'Dr. Drift is typing');
+  for (let index = 0; index < 3; index += 1) typing.append(document.createElement('span'));
+  driftChatMessages.append(typing);
+  driftChatMessages.scrollTop = driftChatMessages.scrollHeight;
+  return typing;
+}
+
+function suggestedDriftQuestions() {
+  if (!currentScan) return [];
+  return [
+    `Why is my score ${currentScan.healthScore}?`,
+    'How do I fix the critical violations?',
+    'Which layer has the most problems?',
+    'Explain this architecture'
+  ];
+}
+
+function updateDriftChatWelcome() {
+  chatGeneration += 1;
+  if (chatRequestController) chatRequestController.abort();
+  chatRequestController = null;
+  chatBusy = false;
+  cancelDriftRecognition(false);
+  stopDriftSpeaking();
+  driftChatMessages.replaceChildren();
+  driftChatSuggestions.replaceChildren();
+  setDriftChatStatus('');
+  appendDriftChatMessage(
+    'assistant',
+    currentScan
+      ? 'Hi, I’m Dr. Drift. I can explain this scan and suggest practical architecture fixes.'
+      : 'Hi, I’m Dr. Drift. Scan a repository or try the demo first, and I’ll help explain its architecture.'
+  );
+  suggestedDriftQuestions().forEach((question) => {
+    const chip = createElement('button', 'drift-chat-suggestion', question);
+    chip.type = 'button';
+    chip.addEventListener('click', () => { void submitDriftQuestion(question); });
+    driftChatSuggestions.append(chip);
+  });
+  updateDriftChatControls();
+}
+
+function openDriftChat() {
+  driftChatPanel.hidden = false;
+  driftChatTrigger.setAttribute('aria-expanded', 'true');
+  window.requestAnimationFrame(() => {
+    (driftChatInput.disabled ? driftChatCloseButton : driftChatInput).focus();
+  });
+}
+
+function closeDriftChat(restoreFocus = false) {
+  cancelDriftRecognition(false);
+  stopDriftSpeaking();
+  driftChatPanel.hidden = true;
+  driftChatTrigger.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) driftChatTrigger.focus();
+}
+
+function stopDriftSpeaking() {
+  if (supportsSpeechSynthesis) window.speechSynthesis.cancel();
+  currentUtterance = null;
+  driftChatStopSpeakingButton.hidden = true;
+}
+
+function speechFriendlyText(reply) {
+  return reply
+    .replace(/```[\s\S]*?```/g, ' Code omitted. ')
+    .replace(/`[^`]*`/g, ' code omitted ')
+    .replace(/https?:\/\/\S+/gi, 'a link')
+    .replace(/\b[A-Za-z]:[\\/](?:[\w .-]+[\\/])*[\w .-]+/g, 'a file path')
+    .replace(/\b(?:[\w.-]+[\\/])+[\w.-]+\b/g, 'a file path')
+    .slice(0, 700);
+}
+
+function speakDriftReply(reply) {
+  if (!voiceOutputEnabled || !supportsSpeechSynthesis || driftChatPanel.hidden) return;
+  const text = speechFriendlyText(reply).trim();
+  if (!text) return;
+
+  stopDriftSpeaking();
+  const utterance = new window.SpeechSynthesisUtterance(text);
+  const language = driftChatLanguage.value;
+  const languagePrefix = language.split('-')[0].toLowerCase();
+  const voice = window.speechSynthesis.getVoices()
+    .find((candidate) => candidate.lang.toLowerCase().startsWith(languagePrefix));
+  utterance.lang = language;
+  if (voice) utterance.voice = voice;
+  utterance.rate = 0.96;
+  utterance.onstart = () => {
+    if (currentUtterance === utterance) driftChatStopSpeakingButton.hidden = false;
+  };
+  utterance.onend = () => {
+    if (currentUtterance === utterance) stopDriftSpeaking();
+  };
+  utterance.onerror = () => {
+    if (currentUtterance === utterance) stopDriftSpeaking();
+  };
+  currentUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
+}
+
+function cancelDriftRecognition(showStatus = true) {
+  if (!activeRecognition) return;
+  const recognition = activeRecognition;
+  activeRecognition = null;
+  voiceTranscript = '';
+  voiceRecognitionError = 'aborted';
+  try {
+    recognition.abort();
+  } catch (error) {
+    if (error.name !== 'InvalidStateError') throw error;
+  }
+  driftChatMicButton.classList.remove('is-listening');
+  updateDriftChatControls();
+  if (showStatus) setDriftChatStatus('Voice input cancelled.');
+}
+
+function startDriftRecognition() {
+  if (!SpeechRecognitionApi || !currentScan || chatBusy) return;
+  stopDriftSpeaking();
+  voiceTranscript = '';
+  voiceRecognitionError = '';
+  driftChatInput.value = '';
+  setDriftChatStatus('Listening…');
+  driftChatMicButton.classList.add('is-listening');
+  try {
+    const recognition = new SpeechRecognitionApi();
+    recognition.lang = driftChatLanguage.value;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    activeRecognition = recognition;
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        if (result.isFinal) voiceTranscript += `${result[0].transcript} `;
+        else interim += result[0].transcript;
+      }
+      driftChatInput.value = `${voiceTranscript}${interim}`.trim();
+      updateDriftChatControls();
+    };
+    recognition.onerror = (event) => {
+      voiceRecognitionError = event.error || 'unknown';
+      const errorMessages = {
+        'not-allowed': 'Microphone access was denied. Allow microphone access in your browser settings and try again.',
+        'service-not-allowed': 'Microphone access was denied. Allow microphone access in your browser settings and try again.',
+        'no-speech': 'No speech was detected. Try again when you are ready.',
+        network: 'Voice input could not connect to your browser’s speech service.'
+      };
+      setDriftChatStatus(errorMessages[voiceRecognitionError] || 'Voice input could not start. Please try again.', true);
+    };
+    recognition.onend = () => {
+      if (activeRecognition !== recognition) return;
+      activeRecognition = null;
+      driftChatMicButton.classList.remove('is-listening');
+      updateDriftChatControls();
+      if (voiceRecognitionError) {
+        if (voiceRecognitionError === 'no-speech') {
+          setDriftChatStatus('No speech was detected. Try again when you are ready.', true);
+        }
+        return;
+      }
+      const question = voiceTranscript.trim();
+      if (!question) {
+        setDriftChatStatus('No speech was detected. Try again when you are ready.', true);
+        return;
+      }
+      driftChatInput.value = question;
+      void submitDriftQuestion(question);
+    };
+    recognition.start();
+    updateDriftChatControls();
+  } catch (error) {
+    activeRecognition = null;
+    driftChatMicButton.classList.remove('is-listening');
+    updateDriftChatControls();
+    setDriftChatStatus(
+      error.name === 'NotAllowedError'
+        ? 'Microphone access was denied. Allow microphone access in your browser settings and try again.'
+        : 'Voice input could not start. Please try again.',
+      true
+    );
+  }
+}
+
+function scanSummaryForDriftChat() {
+  const scan = {
+    repo: currentScan.repo,
+    branch: currentScan.branch,
+    fileCount: currentScan.fileCount,
+    layers: currentScan.layers,
+    healthScore: currentScan.healthScore,
+    summary: currentScan.summary,
+    violations: currentScan.violations.slice(0, 50).map((violation) => ({
+      ruleId: violation.ruleId,
+      severity: violation.severity,
+      message: violation.message,
+      fromFile: violation.fromFile,
+      toFile: violation.toFile,
+      fromLayer: violation.fromLayer,
+      toLayer: violation.toLayer
+    }))
+  };
+  if (currentHistory && Array.isArray(currentHistory.points)) {
+    scan.history = {
+      points: currentHistory.points.slice(-20).map(({ sha, message, healthScore }) => ({
+        sha: typeof sha === 'string' ? sha.slice(0, 40) : '',
+        message: typeof message === 'string' ? message.slice(0, 300) : '',
+        healthScore
+      }))
+    };
+  }
+  return scan;
+}
+
+async function submitDriftQuestion(value) {
+  const question = value.trim();
+  if (!currentScan || chatBusy || !question) return;
+  if (question.length > 1000) {
+    setDriftChatStatus('Keep your question under 1000 characters.', true);
+    return;
+  }
+
+  cancelDriftRecognition(false);
+  stopDriftSpeaking();
+  setDriftChatStatus('');
+  appendDriftChatMessage('user', question);
+  driftChatInput.value = '';
+  chatBusy = true;
+  const generation = ++chatGeneration;
+  const controller = new AbortController();
+  chatRequestController = controller;
+  const typing = showDriftChatTyping();
+  updateDriftChatControls();
+  try {
+    const response = await fetch(apiUrl('/api/chat'), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: question, scan: scanSummaryForDriftChat() }),
+      signal: controller.signal
+    });
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error('Dr. Drift returned an invalid response. Please try again.');
+    }
+    if (!response.ok) {
+      throw new Error(response.status === 503 && result.error === 'Dr. Drift is not available right now'
+        ? 'Dr. Drift is not available right now. Please try again later.'
+        : result.error || 'Dr. Drift could not answer right now. Please try again.');
+    }
+    if (typeof result.reply !== 'string') throw new Error('Dr. Drift returned an invalid response. Please try again.');
+    if (generation !== chatGeneration) return;
+    appendDriftChatMessage('assistant', result.reply);
+    speakDriftReply(result.reply);
+  } catch (error) {
+    if (controller.signal.aborted || generation !== chatGeneration) return;
+    appendDriftChatMessage(
+      'assistant',
+      error instanceof TypeError
+        ? 'Dr. Drift could not connect. Check your connection and try again.'
+        : error.message,
+      true
+    );
+  } finally {
+    typing.remove();
+    if (generation === chatGeneration) {
+      chatRequestController = null;
+      chatBusy = false;
+      updateDriftChatControls();
+    }
+  }
+}
+
+driftChatTrigger.addEventListener('click', openDriftChat);
+driftChatCloseButton.addEventListener('click', () => closeDriftChat(true));
+driftChatClearButton.addEventListener('click', updateDriftChatWelcome);
+driftChatVoiceToggle.setAttribute('aria-pressed', String(voiceOutputEnabled));
+driftChatVoiceToggle.textContent = voiceOutputEnabled ? 'Voice on' : 'Voice off';
+driftChatVoiceToggle.setAttribute('aria-label', `Turn voice replies ${voiceOutputEnabled ? 'off' : 'on'}`);
+driftChatVoiceToggle.addEventListener('click', () => {
+  voiceOutputEnabled = !voiceOutputEnabled;
+  window.localStorage.setItem('driftwatch-dr-drift-voice', String(voiceOutputEnabled));
+  driftChatVoiceToggle.setAttribute('aria-pressed', String(voiceOutputEnabled));
+  driftChatVoiceToggle.textContent = voiceOutputEnabled ? 'Voice on' : 'Voice off';
+  driftChatVoiceToggle.setAttribute('aria-label', `Turn voice replies ${voiceOutputEnabled ? 'off' : 'on'}`);
+  if (!voiceOutputEnabled) stopDriftSpeaking();
+});
+driftChatStopSpeakingButton.addEventListener('click', stopDriftSpeaking);
+driftChatMicButton.addEventListener('click', startDriftRecognition);
+driftChatCancelVoiceButton.addEventListener('click', () => cancelDriftRecognition(true));
+driftChatForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  void submitDriftQuestion(driftChatInput.value);
+});
+driftChatInput.addEventListener('input', updateDriftChatControls);
+updateDriftChatWelcome();
 
 function layerName(layer) {
   if (layer === 'services' || layer === 'service') return 'services';
@@ -1498,6 +1859,7 @@ document.getElementById('reset-onboarding').addEventListener('click', () => {
   currentScanUrl = '';
   currentIsDemo = false;
   currentHistory = null;
+  updateDriftChatWelcome();
   exportCsvButton.hidden = true;
   showToast('First-time setup is ready.');
   window.scrollTo({ top: 0, behavior: 'smooth' });
