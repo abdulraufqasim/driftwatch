@@ -75,7 +75,7 @@
       </form>
       <div class="onboarding-divider"><span>or</span></div>
       <button class="sample-button" id="sample-button" type="button">Try demo</button>
-      <small class="onboarding-note">Public repositories are cloned temporarily for read-only analysis. Private repositories are not supported yet.</small>
+      <small class="onboarding-note">Public repository archives are downloaded temporarily for read-only analysis. Private repositories are not supported yet.</small>
     </div>
   </div>
 
@@ -246,7 +246,7 @@
             <div><strong>Repository layers</strong><small>Inspect folder layers inferred by static analysis.</small></div>
           </button>
           <button class="feature-item" data-view="timeline"><span class="feature-icon pulse-feature">⌁</span>
-            <div><strong>Commit history</strong><small>Review recent commits from the cloned repository.</small></div>
+            <div><strong>Commit history</strong><small>Load history separately to review recent commits and health scores.</small></div>
           </button>
         </div>
         <div class="section-heading">
@@ -290,7 +290,7 @@
         <div class="page-heading">
         <div><span class="kicker">Repository history</span>
             <h1>Drift <span class="heading-accent">timeline.</span></h1>
-            <p>Recent commits from the repository’s shallow clone; commits are history only, not drift analysis.</p>
+            <p>Load repository history separately to compare architecture health across commits.</p>
           </div><button class="outline-button" id="export-report" data-action="export-report"><span>↓</span> Export report</button>
         </div>
         <div class="timeline-summary">
@@ -352,15 +352,20 @@
       <h2 id="scan-dialog-heading">Guardian is looking closer<span class="heading-accent">.</span></h2>
       <p id="scan-dialog-description">Preparing a read-only scan of the selected public GitHub repository.</p>
       <p class="scan-error" id="scan-error" role="alert" hidden></p>
-      <div class="progress-track"><span id="progress-bar"></span></div>
-      <div class="scan-progress"><span id="progress-label">Initializing scan</span><strong
-          id="progress-percent">0%</strong></div>
+      <div class="progress-track" role="progressbar" aria-label="Repository scan progress"
+        aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></div>
+      <div class="scan-progress"><span id="progress-label" aria-live="polite" aria-atomic="true">Checking repository</span><strong
+          id="progress-percent" aria-hidden="true">0%</strong></div>
+      <p class="scan-wait-note" id="scan-wait-note" role="status" aria-live="polite" hidden>
+        Waking up the server. The first scan can take up to a minute.
+      </p>
+      <button class="outline-button scan-retry" id="retry-scan" type="button" hidden>Retry</button>
       <div class="scan-checklist">
-        <div class="scan-step" data-step="Checking repository visibility"><span>1</span>Checking repository visibility<i>○</i></div>
-        <div class="scan-step" data-step="Cloning repository"><span>2</span>Cloning repository<i>○</i></div>
-        <div class="scan-step" data-step="Analyzing repository structure"><span>3</span>Analyzing repository structure<i>○</i></div>
-        <div class="scan-step" data-step="Building architecture map"><span>4</span>Building architecture map<i>○</i></div>
-        <div class="scan-step" data-step="Reading recent Git history"><span>5</span>Reading recent Git history<i>○</i></div>
+        <div class="scan-step" data-step="Checking repository"><span>1</span>Checking repository<i>○</i></div>
+        <div class="scan-step" data-step="Downloading archive"><span>2</span>Downloading archive<i>○</i></div>
+        <div class="scan-step" data-step="Analyzing files and imports"><span>3</span>Analyzing files and imports<i>○</i></div>
+        <div class="scan-step" data-step="Applying architecture rules"><span>4</span>Applying architecture rules<i>○</i></div>
+        <div class="scan-step" data-step="Building architecture map"><span>5</span>Building architecture map<i>○</i></div>
       </div>
     </div>
   </div>

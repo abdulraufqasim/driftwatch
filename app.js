@@ -6,7 +6,10 @@ const closeScan = document.getElementById('close-scan');
 const progressBar = document.getElementById('progress-bar');
 const progressLabel = document.getElementById('progress-label');
 const progressPercent = document.getElementById('progress-percent');
+const progressTrack = document.querySelector('.progress-track');
 const scanSteps = [...document.querySelectorAll('.scan-step')];
+const scanWaitNote = document.getElementById('scan-wait-note');
+const retryScanButton = document.getElementById('retry-scan');
 const searchInput = document.getElementById('repo-search');
 const onboarding = document.getElementById('onboarding');
 const appShell = document.getElementById('app-shell');
@@ -54,7 +57,10 @@ let currentScanDate = '';
 let currentScanUrl = '';
 let currentIsDemo = false;
 let currentHistory = null;
+let activeScanRun = null;
+let retryScanOptions = null;
 const API_BASE_URL = (window.DRIFTWATCH_API_BASE || '').replace(/\/+$/, '');
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
@@ -162,30 +168,135 @@ searchInput.addEventListener('input', () => {
 function resetScan() {
   document.getElementById('scan-dialog-heading').firstChild.textContent = 'Scanning repository';
   closeScan.disabled = false;
+  progressTrack.classList.remove('is-pulsing');
   progressBar.style.width = '0%';
+  progressTrack.setAttribute('aria-valuenow', '0');
   progressLabel.textContent = 'Waiting to start...';
   progressPercent.textContent = '0%';
+  scanWaitNote.hidden = true;
+  retryScanButton.hidden = true;
   scanError.hidden = true;
   scanError.textContent = '';
   scanSteps.forEach((step, index) => {
     step.classList.toggle('active', index === 0);
     step.classList.remove('done');
+    step.classList.remove('failed');
     step.querySelector('i').textContent = '○';
   });
 }
 
-function updateScanProgress(progress, stage) {
-  progressBar.style.width = `${progress}%`;
-  progressLabel.textContent = stage;
-  progressPercent.textContent = `${progress}%`;
-  const activeIndex = progress < 10 ? 0
-    : progress < 20 ? 1
-      : progress < 80 ? 2
-        : progress < 92 ? 3 : 4;
+function setScanProgress(progress) {
+  const value = Math.max(0, Math.min(100, progress));
+  progressBar.style.width = `${value}%`;
+  progressTrack.setAttribute('aria-valuenow', String(Math.round(value)));
+  const roundedValue = Math.round(value);
+  if (progressPercent.textContent !== `${roundedValue}%`) {
+    progressPercent.textContent = `${roundedValue}%`;
+  }
+  progressTrack.classList.toggle('is-pulsing', value >= 90 && value < 100);
+}
+
+function setScanStep(run, activeIndex, failed = false) {
+  run.currentStep = activeIndex;
+  const activeStep = scanSteps[activeIndex];
+  progressLabel.textContent = activeStep.dataset.step;
   scanSteps.forEach((step, index) => {
-    step.classList.toggle('active', index === activeIndex && progress < 100);
-    step.classList.toggle('done', index < activeIndex || progress >= 100);
-    step.querySelector('i').textContent = index < activeIndex || progress >= 100 ? '✓' : '○';
+    const isFailed = failed && index === activeIndex;
+    step.classList.toggle('active', index === activeIndex && !isFailed);
+    step.classList.toggle('done', index < activeIndex);
+    step.classList.toggle('failed', isFailed);
+    step.querySelector('i').textContent = isFailed ? '×' : index < activeIndex ? '✓' : '○';
+  });
+}
+
+function stopScanProgress(run) {
+  if (run.frameId) window.cancelAnimationFrame(run.frameId);
+  run.frameId = null;
+  run.progressTimers.forEach((timer) => window.clearTimeout(timer));
+  run.progressTimers = [];
+  if (run.waitNoteTimer) window.clearTimeout(run.waitNoteTimer);
+  run.waitNoteTimer = null;
+  if (run.timeoutTimer) window.clearTimeout(run.timeoutTimer);
+  run.timeoutTimer = null;
+  if (run.completionWaitTimer) window.clearTimeout(run.completionWaitTimer);
+  run.completionWaitTimer = null;
+  if (run.completionWaitResolve) {
+    run.completionWaitResolve(false);
+    run.completionWaitResolve = null;
+  }
+}
+
+function waitForDemoMinimumDuration(run) {
+  const remaining = 900 - (Date.now() - run.startedAt);
+  if (remaining <= 0) return Promise.resolve(!run.cancelled);
+  return new Promise((resolve) => {
+    run.completionWaitResolve = resolve;
+    run.completionWaitTimer = window.setTimeout(() => {
+      run.completionWaitTimer = null;
+      run.completionWaitResolve = null;
+      resolve(!run.cancelled && activeScanRun === run);
+    }, remaining);
+  });
+}
+
+function updatePendingScanProgress(run) {
+  if (activeScanRun !== run || run.cancelled || run.timedOut) return;
+  const elapsed = Date.now() - run.startedAt;
+  const stageTimes = run.demo ? [250, 500, 750] : [1500, 4000, 8000];
+  let activeIndex = 0;
+  stageTimes.forEach((time, index) => {
+    if (elapsed >= time) activeIndex = index + 1;
+  });
+  if (activeIndex > run.currentStep) setScanStep(run, activeIndex);
+
+  if (prefersReducedMotion.matches) {
+    setScanProgress(run.currentStep * 25);
+    return;
+  }
+  setScanProgress(Math.min(90, (elapsed / 20000) * 90));
+  run.frameId = window.requestAnimationFrame(() => updatePendingScanProgress(run));
+}
+
+function finishScanProgress(run) {
+  stopScanProgress(run);
+  scanWaitNote.hidden = true;
+
+  if (prefersReducedMotion.matches) {
+    setScanStep(run, scanSteps.length - 1);
+    setScanProgress(100);
+    progressLabel.textContent = 'Scan complete';
+    return Promise.resolve(!run.cancelled);
+  }
+
+  return new Promise((resolve) => {
+    run.resolveCompletion = resolve;
+    const startedAt = performance.now();
+    const duration = 360;
+    const initialProgress = Number.parseFloat(progressBar.style.width) || 0;
+    const initialStep = run.currentStep;
+    const remainingSteps = scanSteps.length - 1 - initialStep;
+    const advance = (now) => {
+      if (run.cancelled || activeScanRun !== run) {
+        run.resolveCompletion = null;
+        resolve(false);
+        return;
+      }
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const activeIndex = initialStep + Math.floor(progress * remainingSteps);
+      setScanStep(run, Math.min(scanSteps.length - 1, activeIndex));
+      setScanProgress(initialProgress + (100 - initialProgress) * progress);
+      if (progress < 1) {
+        run.frameId = window.requestAnimationFrame(advance);
+        return;
+      }
+      setScanStep(run, scanSteps.length - 1);
+      setScanProgress(100);
+      progressLabel.textContent = 'Scan complete';
+      run.frameId = null;
+      run.resolveCompletion = null;
+      resolve(true);
+    };
+    run.frameId = window.requestAnimationFrame(advance);
   });
 }
 
@@ -213,16 +324,18 @@ function publicApiError(body, status) {
   return body.error || 'The repository scan could not be completed. Please try again.';
 }
 
-async function postPublicJson(endpoint, payload) {
+async function postPublicJson(endpoint, payload, { signal } = {}) {
   let response;
   try {
     response = await fetch(apiUrl(endpoint), {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal
     });
-  } catch {
+  } catch (error) {
+    if (signal && signal.aborted) throw error;
     throw new Error('Unable to reach the Driftwatch server. Check your connection and try again.');
   }
   let body;
@@ -257,19 +370,65 @@ async function runPublicScan({ demo = false, url = '' } = {}) {
     }
   }
 
+  const run = {
+    controller: new AbortController(),
+    startedAt: Date.now(),
+    demo,
+    currentStep: 0,
+    cancelled: false,
+    timedOut: false,
+    frameId: null,
+    progressTimers: [],
+    waitNoteTimer: null,
+    timeoutTimer: null,
+    completionWaitTimer: null,
+    completionWaitResolve: null,
+    resolveCompletion: null
+  };
+  activeScanRun = run;
+  retryScanOptions = null;
   setScanControlsDisabled(true);
   setPublicScanMessage(demo ? 'Loading the demo repository…' : 'Scanning public repository…');
   resetScan();
   scanDialogDescription.textContent = demo
     ? 'Analyzing the bundled demo repository.'
     : 'Downloading and analyzing the public repository archive.';
-  progressLabel.textContent = demo ? 'Analyzing demo repository…' : 'Analyzing public repository…';
-  progressPercent.textContent = '…';
-  progressBar.style.width = '60%';
   scanOverlay.classList.add('visible');
-  closeScan.disabled = true;
+  setScanStep(run, 0);
+  updatePendingScanProgress(run);
+  const stageTimes = demo ? [250, 500, 750] : [1500, 4000, 8000];
+  run.progressTimers = stageTimes.map((time, index) => window.setTimeout(() => {
+    if (activeScanRun === run && run.currentStep < index + 1) setScanStep(run, index + 1);
+  }, time));
+  if (!demo) {
+    scanWaitNote.hidden = true;
+    run.waitNoteTimer = window.setTimeout(() => {
+      if (activeScanRun === run) scanWaitNote.hidden = false;
+    }, 8000);
+    run.timeoutTimer = window.setTimeout(() => {
+      if (activeScanRun !== run) return;
+      run.timedOut = true;
+      run.controller.abort();
+      stopScanProgress(run);
+      setScanStep(run, run.currentStep, true);
+      scanError.textContent = 'The scan timed out after 90 seconds. Retry when you are ready.';
+      scanError.hidden = false;
+      retryScanButton.hidden = false;
+      retryScanOptions = { demo, url };
+      setPublicScanMessage(scanError.textContent, true);
+      activeScanRun = null;
+      closeScan.disabled = false;
+      setScanControlsDisabled(false);
+    }, 90000);
+  }
   try {
-    const scan = await postPublicJson('/api/scan', demo ? { demo: true } : { url: scanUrl });
+    const scan = await postPublicJson('/api/scan', demo ? { demo: true } : { url: scanUrl }, {
+      signal: run.controller.signal
+    });
+    if (run.cancelled || activeScanRun !== run) return;
+    if (demo && !await waitForDemoMinimumDuration(run)) return;
+    stopScanProgress(run);
+    if (!await finishScanProgress(run)) return;
     currentScan = scan;
     currentScanDate = new Date().toISOString();
     currentScanUrl = demo ? '' : scanUrl;
@@ -283,20 +442,44 @@ async function runPublicScan({ demo = false, url = '' } = {}) {
     window.localStorage.setItem('driftwatch-onboarded', 'true');
     dashboardRepoUrlInput.value = currentScanUrl;
     repoUrlInput.value = currentScanUrl;
-    progressBar.style.width = '100%';
-    progressPercent.textContent = '100%';
-    progressLabel.textContent = 'Scan complete';
     setPublicScanMessage(`${scan.repo} scanned successfully.`, false);
     window.setTimeout(() => scanOverlay.classList.remove('visible'), 450);
     if (demo) await loadRepositoryHistory(true);
   } catch (error) {
-    scanOverlay.classList.remove('visible');
+    if (run.cancelled || run.timedOut || activeScanRun !== run) return;
+    stopScanProgress(run);
+    setScanStep(run, run.currentStep, true);
+    scanError.textContent = error.message;
+    scanError.hidden = false;
     setPublicScanMessage(error.message, true);
     if (!appShell.classList.contains('ready')) onboarding.classList.add('visible');
   } finally {
-    closeScan.disabled = false;
+    if (activeScanRun === run) {
+      stopScanProgress(run);
+      activeScanRun = null;
+      closeScan.disabled = false;
+      setScanControlsDisabled(false);
+    }
+  }
+}
+
+function cancelActiveScan() {
+  const run = activeScanRun;
+  if (run) {
+    run.cancelled = true;
+    run.controller.abort();
+    stopScanProgress(run);
+    if (run.resolveCompletion) {
+      run.resolveCompletion(false);
+      run.resolveCompletion = null;
+    }
+    activeScanRun = null;
     setScanControlsDisabled(false);
   }
+  retryScanOptions = null;
+  retryScanButton.hidden = true;
+  scanWaitNote.hidden = true;
+  closeScan.disabled = false;
 }
 
 async function scanCurrentRepository() {
@@ -976,7 +1159,7 @@ function renderRepositoryHistory(commits) {
   caption.replaceChildren();
   document.getElementById('timeline-commit-count').textContent = commits.length.toLocaleString();
   if (!commits.length) {
-    const empty = createElement('p', 'empty-state', 'No commits were found in the shallow clone.');
+    const empty = createElement('p', 'empty-state', 'No commit history was returned for this repository.');
     activity.append(empty);
     timeline.append(createElement('p', 'empty-state timeline-empty', 'No commit history is available.'));
     return;
@@ -1158,7 +1341,14 @@ githubDisconnectButton.addEventListener('click', async () => {
 sampleButton.addEventListener('click', () => runPublicScan({ demo: true }));
 
 closeScan.addEventListener('click', () => {
+  cancelActiveScan();
   scanOverlay.classList.remove('visible');
+});
+retryScanButton.addEventListener('click', () => {
+  if (!retryScanOptions) return;
+  const options = retryScanOptions;
+  retryScanOptions = null;
+  runPublicScan(options);
 });
 scanOverlay.addEventListener('click', (event) => {
   if (event.target === scanOverlay) closeScan.click();
