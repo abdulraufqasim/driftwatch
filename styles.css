@@ -1848,7 +1848,21 @@ button:focus-visible {
     width: 0;
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent-bright));
-    transition: width .45s ease
+}
+
+.progress-track.is-pulsing span {
+    animation: scan-progress-pulse 1.8s ease-in-out infinite
+}
+
+@keyframes scan-progress-pulse {
+    0%,
+    100% {
+        opacity: 1
+    }
+
+    50% {
+        opacity: .72
+    }
 }
 
 .scan-progress {
@@ -1912,6 +1926,42 @@ button:focus-visible {
 
 .scan-step.done i {
     color: var(--green)
+}
+
+.scan-step.failed {
+    color: #f0a19d
+}
+
+.scan-step.failed span,
+.scan-step.failed i {
+    color: #f07870;
+    border-color: #f07870
+}
+
+.scan-error,
+.scan-wait-note {
+    margin: 10px 0;
+    line-height: 1.5
+}
+
+.scan-error {
+    color: #f07870 !important
+}
+
+.scan-wait-note {
+    color: #98a4b9;
+    font-size: 11px
+}
+
+.scan-retry {
+    margin-top: 4px
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scan-beam,
+    .progress-track.is-pulsing span {
+        animation: none
+    }
 }
 
 @media(max-width:1000px) {
